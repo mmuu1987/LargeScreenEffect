@@ -1,0 +1,395 @@
+﻿#pragma kernel CSPositionKernel
+#pragma kernel InitLerp
+#define thread_group_size_x 64
+#define thread_group_size_y 1
+#define P 3.141592653
+#define Epsilon    0.0001
+
+
+#include "UnityCG.cginc"
+#include "../GPUParticle.cginc"
+#include "../GPUParticleComputeCommon.cginc"
+#include "../../Common/Shaders/Math.cginc"
+#include "../../Common/Shaders/Random.cginc"
+
+
+
+RWTexture2D<half2> Velocity;
+
+RWTexture2D<half2> VelocityTemp;
+
+
+float Seed;
+float dt;
+int ScreenWidth;
+int ScreenHeight;
+float OpenSpeed = 1;
+int StateCode = 0;
+string str = "test";
+
+//着力点
+float3 TargetPosLeft;
+//着力半径
+float ForceRadius;
+
+//粒子可以运动的范围
+float3 Range;
+
+//视矩阵，也就是世界到摄像机的矩阵，由C#传递过来
+float4x4 v;
+//投影矩阵，也就是摄像机到屏幕的矩阵，由C#传递过来
+float4x4 p;
+//视矩阵的逆矩阵，也就是摄像机到世界的矩阵，由C#传递过来
+float4x4 iv;
+//投影矩阵的逆矩阵，也就是屏幕到摄像机的的矩阵，由C#传递过来
+float4x4 ip;
+
+
+//把世界坐标点转换到屏幕坐标，支持相机旋转
+//ComputeScreenPos虽然为unityCG.cginc的方法，但是不涉及到矩阵，所以可以应用该方法
+float2 WorldToScreenPos2(float3 pos)
+{
+	float4x4 vp = mul(p, v);
+  
+	float4 vertex = mul(vp, float4(pos, 1.0));
+  
+	float4 screenPos = ComputeScreenPos(vertex);
+  
+	screenPos.xy = screenPos.xy / screenPos.w;
+  
+	float width = screenPos.x * ScreenWidth;
+  
+	float height = screenPos.y * ScreenHeight;
+  
+	return float2(width, height);
+}
+//把世界坐标点转换到屏幕坐标，支持相机旋转,得到的数据范围是[0-1]
+//ComputeScreenPos虽然为unityCG.cginc的方法，但是不涉及到矩阵，所以可以应用该方法
+float2 WorldToScreenPos(float3 pos)
+{
+	float4x4 vp = mul(p, v);
+
+	float4 vertex = mul(vp, float4(pos, 1.0));
+
+	float4 screenPos = ComputeScreenPos(vertex);
+
+	screenPos.xy = screenPos.xy / screenPos.w;
+
+	return float2(screenPos.x, screenPos.y);
+}
+
+float rand(in float2 uv)
+{
+	float2 noise = (frac(sin(dot(uv, float2(12.9898, 78.233) * 2.0)) * 43758.5453));
+	return abs(noise.x + noise.y) * 0.5;
+}
+
+float random(float2 st, float n)
+{
+	st = floor(st * n);
+	return frac(sin(dot(st.xy, float2(12.9898, 78.233))) * 43758.5453123);
+}
+
+inline float ValueNoise(float3 pos)
+{
+	float3 Noise_skew = pos + 0.2127 + pos.x * pos.y * pos.z * 0.3713;
+	float3 Noise_rnd = 4.789 * sin(489.123 * (Noise_skew));
+	return frac(Noise_rnd.x * Noise_rnd.y * Noise_rnd.z * (1.0 + Noise_skew.x));
+}
+
+
+//根据位置获取随机速度
+float2 GetVelocity(float3 pos)
+{
+	float2 newScreenPos = WorldToScreenPos(pos);
+
+	float v1 = random(float2(newScreenPos.y, newScreenPos.x), 100);
+
+	float v2 = random(newScreenPos, 100);
+
+    //转换到[-1,1]区间，上面的V1,V2数值范围为[0,1],我们通过-0.5  *2 来转换
+	v1 = (v1 - 0.5) * 2;
+	v2 = (v2 - 0.5) * 2;
+
+	return float2(v1, v2);
+
+}
+
+//隔一段时间做随机运动
+void RandMove(uint3 id : SV_DispatchThreadID)
+{
+	float4 pos = positionBuffer[id.x].position;
+
+	float4 velocity = positionBuffer[id.x].velocity;
+
+	float4 timeTemp = positionBuffer[id.x].uvOffset;
+    
+	float4 originalPos = positionBuffer[id.x].originalPos;
+
+	int stateCode = positionBuffer[id.x].stateCode;
+ 
+	if (timeTemp.y <= timeTemp.x)
+	{
+		timeTemp.y += dt;
+	}
+	else
+	{
+		float2 velocityTemp = GetVelocity(pos.xyz);
+		velocityTemp = normalize(velocityTemp) * timeTemp.z;
+		timeTemp.y = 0;
+		velocity.xy = velocityTemp;
+	}
+
+	float2 target = pos.xy + velocity.xy;
+
+	pos.xy = lerp(pos.xy, target.xy, dt);
+    
+    
+    float d = distance(pos.xy, TargetPosLeft.xy);
+
+	float2 v;
+	if (d <= ForceRadius)
+	{
+        v = normalize(pos.xy - TargetPosLeft.xy) * (ForceRadius);
+		
+        pos.xy = lerp(pos.xy, TargetPosLeft.xy + v, dt * 5);
+		
+		//重新赋予速度,这个速度可以极快的回到原位
+		timeTemp.y = 0;
+		velocity.xy = normalize(originalPos.xy - pos.xy);
+	}
+	
+	
+
+    
+    //检测是否越界，越界就把速度反过来
+
+	if (pos.x >= Range.x || pos.x <= -Range.x)
+		velocity.x *= -1;
+
+	if (pos.y >= Range.y || pos.y <= -Range.y)
+		velocity.y *= -1;
+
+    
+
+
+	positionBuffer[id.x].position = pos;
+
+	positionBuffer[id.x].velocity = velocity;
+
+	positionBuffer[id.x].uvOffset = timeTemp;
+
+
+}
+
+
+//自由迁移运动
+void FreeMove(uint3 id : SV_DispatchThreadID)
+{
+	float4 pos = positionBuffer[id.x].position;
+
+	float4 originalPos = positionBuffer[id.x].originalPos;
+
+	float3 moveDir = positionBuffer[id.x].moveDir;
+
+	float2 screenPos = WorldToScreenPos2(pos);
+
+    //float4 originalPos = positionBuffer[0].position;
+
+	float3 velocity = positionBuffer[id.x].velocity;
+    
+	float4 timeTemp = positionBuffer[id.x].uvOffset;
+    //从速度贴图上根据该点的位置获取速度
+   /* half2  v = Velocity[int2(screenPos.x, (ScreenHeight - screenPos.y))];
+    pos.xy += v *1 ;*/
+    float d = distance(pos.xy, TargetPosLeft.xy);
+
+	float2 v;
+	if (d <= ForceRadius)
+	{
+        v = normalize(originalPos.xy - TargetPosLeft.xy) * (ForceRadius);
+
+        pos.xy = lerp(pos.xy, TargetPosLeft.xy + v, dt * 5);
+       // pos.xy = ForcePos.xy + v;
+	}
+	else
+	{
+		pos.xy = lerp(pos.xy, originalPos.xy, dt * 5);
+	}
+
+	positionBuffer[id.x].position = pos;
+   
+	positionBuffer[id.x].moveDir = moveDir;
+	
+}
+//聚集状态
+void gatherState(uint3 id : SV_DispatchThreadID)
+{
+	
+	int stateCode = positionBuffer[id.x].stateCode;
+	
+	float4 pos = positionBuffer[id.x].position;
+
+	float4 originalPos = positionBuffer[id.x].originalPos;
+	
+	float3 moveDir = positionBuffer[id.x].moveDir;
+	
+	float4 timeTemp = positionBuffer[id.x].uvOffset;
+	
+	float v = 0; //插值
+	
+	if (stateCode != StateCode)//如果是从其他状态切换到该状态
+	{
+		float2 v = GetVelocity(originalPos);
+		moveDir.x = v.x / 2 + 0.5;
+		if (moveDir.x <= 0.1)
+		{
+			moveDir.x = 0.1;
+
+		}
+		stateCode = StateCode;
+		timeTemp.y = 0;
+
+	}
+	
+	
+	///////////间隔到一定时间才移动
+	if (timeTemp.y <= timeTemp.w)
+	{
+		timeTemp.y += dt;
+		v = 0;
+
+	}
+	else
+	{
+		v = moveDir.x;
+	}
+	/////////间隔到一定时间才移动
+	
+	
+	
+    pos.xy = EaseOutQuad(pos.xy, TargetPosLeft.xy, dt * v * 20);
+	
+	positionBuffer[id.x].position = pos;
+	positionBuffer[id.x].moveDir = moveDir;
+	
+	positionBuffer[id.x].stateCode = stateCode;
+	
+	positionBuffer[id.x].uvOffset = timeTemp;
+}
+//散开状态
+void diffuseState(uint3 id : SV_DispatchThreadID)
+{
+	int stateCode = positionBuffer[id.x].stateCode;
+	
+	float4 pos = positionBuffer[id.x].position;
+
+	float4 originalPos = positionBuffer[id.x].originalPos;
+	
+	float3 moveDir = positionBuffer[id.x].moveDir;
+	
+	float4 timeTemp = positionBuffer[id.x].uvOffset;
+	
+	float v = 0; //插值
+	
+	if (stateCode != StateCode)//如果是从其他状态切换到该状态
+	{
+		float2 v = GetVelocity(originalPos);
+		moveDir.x = v.x / 2 + 0.5;
+		if (moveDir.x <= 0.3)
+		{
+			moveDir.x = 0.3;
+
+		}
+		stateCode = StateCode;
+		timeTemp.y = 0;
+
+	}
+	
+	
+	///////////间隔到一定时间才移动
+	if (timeTemp.y <= timeTemp.w)
+	{
+		timeTemp.y += dt;
+		v = 0;
+
+	}
+	else
+	{
+		v = moveDir.x;
+	}
+	/////////间隔到一定时间才移动
+	
+	pos.xy = EaseInQuad(pos.xy, originalPos.xy, dt * v * 20);
+	
+	positionBuffer[id.x].position = pos;
+	positionBuffer[id.x].moveDir = moveDir;
+	
+	positionBuffer[id.x].stateCode = stateCode;
+	
+	positionBuffer[id.x].uvOffset = timeTemp;
+}
+
+[numthreads(thread_group_size_x, thread_group_size_y, 1)]
+void CSPositionKernel(uint3 id : SV_DispatchThreadID)
+{
+	
+	int stateCode = positionBuffer[id.x].stateCode;
+	
+	if (StateCode == 0)//为程序启动的初始状态
+	{
+		int bigIndex = positionBuffer[id.x].bigIndex;
+
+		if (bigIndex == 0)
+		{
+			RandMove(id);
+		}
+		else
+		{
+			FreeMove(id);
+		}
+	}
+	else if (StateCode == 1)//聚集状态
+	{
+		gatherState(id);
+
+	}
+	else if (StateCode == 2)//聚集状态
+	{
+		diffuseState(id);
+
+	}
+	
+		
+   
+  
+  
+}
+
+//位置变换  
+[numthreads(thread_group_size_x, thread_group_size_y, 1)]
+void InitLerp(uint3 id : SV_DispatchThreadID)
+{
+	
+	
+	int bigIndex = positionBuffer[id.x].bigIndex;
+
+	float scale = 1.0f;
+
+	if (bigIndex == 0)
+	{
+		RandMove(id);
+		scale = 0.5f; //第一种类的花适当缩小
+	}
+	else
+	{
+     
+	}
+	float4 pos = positionBuffer[id.x].position;
+     
+	pos.w = lerp(pos.w, scale, dt * OpenSpeed);
+
+	positionBuffer[id.x].position = pos;
+
+    
+}

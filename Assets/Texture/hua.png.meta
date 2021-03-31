@@ -1,0 +1,327 @@
+fileFormatVersion: 2
+guid: 0ae921c913f522c4091305e30fe12a1a
+TextureImporter:
+  fileIDToRecycleName:
+    21300000: hua_0
+    21300002: hua_1
+    21300004: hua_2
+    21300006: hua_3
+    21300008: hua_4
+    21300010: hua_5
+    21300012: hua_6
+    21300014: hua_7
+    21300016: hua_8
+  externalObjects: {}
+  serializedVersion: 9
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+  isReadable: 1
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: -1
+    aniso: -1
+    mipBias: -100
+    wrapU: 1
+    wrapV: 1
+    wrapW: -1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: 0
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  platformSettings:
+  - serializedVersion: 2
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+  - serializedVersion: 2
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: hua_0
+      rect:
+        serializedVersion: 2
+        x: 286
+        y: 1060
+        width: 159
+        height: 151
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 74ad41aa8b06a084cba3e6f202de9bb3
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hua_1
+      rect:
+        serializedVersion: 2
+        x: 282
+        y: 323
+        width: 181
+        height: 190
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ba1719646be2fc34cbeea40b99f20b8c
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hua_2
+      rect:
+        serializedVersion: 2
+        x: 370
+        y: 544
+        width: 224
+        height: 201
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2541a1d0fb8300449a6579d70b435a67
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hua_3
+      rect:
+        serializedVersion: 2
+        x: 690
+        y: 323
+        width: 208
+        height: 198
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e0cd0f995d8fee7408d121350bfbae27
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hua_4
+      rect:
+        serializedVersion: 2
+        x: 895
+        y: 101
+        width: 161
+        height: 150
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6e4d18934886ae24c9a0212e51320fe0
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hua_5
+      rect:
+        serializedVersion: 2
+        x: 451
+        y: 906
+        width: 240
+        height: 230
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5bee536faedec1642ae2b539eaad838e
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hua_7
+      rect:
+        serializedVersion: 2
+        x: 559
+        y: 327
+        width: 125
+        height: 190
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 909f5572d78128e44b333fbc960bf994
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hua_8
+      rect:
+        serializedVersion: 2
+        x: 696
+        y: 149
+        width: 194
+        height: 164
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3f5557edcb11a854aa861891190058c6
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hua_6
+      rect:
+        serializedVersion: 2
+        x: 328
+        y: 749
+        width: 160
+        height: 198
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 27, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f732ab1210719ed44bdef628947a9b42
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline:
+    - - {x: 301, y: -413}
+      - {x: 286, y: -418}
+      - {x: 251, y: -435}
+      - {x: 251, y: -549}
+      - {x: 266, y: -567}
+      - {x: 387, y: -567}
+      - {x: 416, y: -559}
+      - {x: 416, y: -445}
+      - {x: 389, y: -413}
+    - - {x: 67, y: -522}
+      - {x: 258, y: -522}
+      - {x: 258, y: -183}
+      - {x: 249, y: -143}
+      - {x: -99, y: -143}
+      - {x: -99, y: -314}
+    - - {x: -345, y: -151}
+      - {x: -362, y: -187}
+      - {x: -362, y: -295}
+      - {x: -296, y: -345}
+      - {x: -214, y: -345}
+      - {x: -177, y: -298}
+      - {x: -177, y: -151}
+    - - {x: -69, y: 81}
+      - {x: -221, y: 81}
+      - {x: -275, y: 41}
+      - {x: -275, y: -140}
+      - {x: -271, y: -157}
+      - {x: -102, y: -157}
+      - {x: -51, y: -137}
+      - {x: -46, y: -105}
+      - {x: -46, y: 61}
+    - - {x: -352, y: 535}
+      - {x: -352, y: 99}
+      - {x: -331, y: 80}
+      - {x: -129, y: 80}
+      - {x: 27, y: 155}
+      - {x: 48, y: 210}
+      - {x: 48, y: 452}
+      - {x: 14, y: 535}
+    physicsShape: []
+    bones: []
+    spriteID: 8935e077de5b18e4ebf7987991ce8b93
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+  spritePackingTag: 
+  pSDRemoveMatte: 0
+  pSDShowRemoveMatteOption: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

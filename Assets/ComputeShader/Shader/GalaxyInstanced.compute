@@ -1,0 +1,314 @@
+﻿#pragma kernel CSPositionKernel
+#pragma kernel InitLerp
+
+#define thread_group_size_x 64
+#define thread_group_size_y 1
+#define P 3.141592653
+
+#include "UnityCG.cginc"
+#include "../GPUParticle.cginc"
+#include "../GPUParticleComputeCommon.cginc"
+#include "../../Common/Shaders/Math.cginc"
+#include "../../Common/Shaders/Random.cginc"
+
+
+
+
+//反馈给cs，点击到哪个图索引
+RWStructuredBuffer<PosAndDir> clickPointsBuff;
+RWStructuredBuffer<DepthInfo> depthBuffer;
+//多个点击点的运动
+RWStructuredBuffer<float3> clicks;
+RWStructuredBuffer<float4> randomPosData;
+
+
+float deltaTime;
+
+float4 clickPoint;
+//插值速度  
+float MoveSpeed;
+//点击屏幕，触发吸引力的范围,必须在CS赋值初始化   
+float dis = 5;
+
+float4 rangeRot;
+
+float Width;
+
+float Height;
+
+float m32;
+
+float m00;
+
+float m11;
+
+float3 camPos;
+
+//圆球的原始位置
+float3 srcPos;
+//选择的类别
+int selectClass;
+//返回圆球的类别
+int hideClass;
+//展示的宽度
+int widthScale;
+
+
+//把屏幕坐标转成世界坐标，不支持相机旋转
+float3 ScreenToWorld(float3 p)
+{
+  float px = p.x / Width;
+
+  px = (px - 0.5f) / 0.5f;
+
+  float py = p.y / Height;
+
+  py = (py - 0.5f) / 0.5f;
+
+  float3 ppos = float3(px, py, p.z); //得到了齐次坐标
+
+  ppos = float3(ppos.x * p.z, ppos.y * p.z, p.z); //反透视除法
+
+  float z1 = ppos.z / m32;
+
+  float x1 = ppos.x / m00;
+
+  float y1 = ppos.y / m11;
+
+
+  //相机转世界坐标
+  x1 = camPos.x + x1;
+  y1 = camPos.y + y1;
+  z1 = camPos.z - z1;
+
+  //得到的坐标为世界坐标
+  return float3(x1, y1, z1);
+
+
+}
+//世界坐标转屏幕坐标 不支持相机旋转
+float3 WorldToScreenPos(float3 worldPos)
+{
+  float z = camPos.z - worldPos.z;
+
+  float x = worldPos.x - camPos.x;
+
+  float y = worldPos.y - camPos.y;
+
+  float3 temp1 = float3(x, y, z);
+
+  float z1 = temp1.z * m32;
+
+  float x1 = temp1.x * m00;
+
+  float y1 = temp1.y * m11;
+
+  float3 ppos = float3(x1 / z1, y1 / z1, z1); //透视除法
+
+  float x2 = ppos.x * 0.5f + 0.5f;
+
+  float y2 = ppos.y * 0.5f + 0.5f;
+
+  x2 = x2 * Width;
+
+  y2 = y2 * Height;
+
+
+  return float3(x2, y2, 0);
+}
+//检测点击点在哪个面片里面
+void CheckClickPoint(uint3 id)
+{
+  clickPointsBuff[0].picIndex = -1; //重置索引
+
+  if (clickPoint.z >= 100000)
+  return;
+  
+  float4 pos = positionBuffer[id.x].position;
+
+  float4 velocity = positionBuffer[id.x].velocity;
+
+  //  if(velocity.x>0)return;//值允许第一层有点击行为
+
+  float alpha = depthBuffer[velocity.x].alpha;
+
+  if (alpha < 1)
+  return; // 在第一排的深度才可以点击，用透明度判断是否在第一排 
+  
+  //float2 leftDownP2, float2 leftUpP1, float2 rightDownP3, float2 rightUpP4, float2 p
+  //默认图片大小为长宽为1，一半就是0.5，
+  float2 leftDown = pos.xy + float2(-0.5, -0.5);
+
+  float2 leftUp = pos.xy + float2(-0.5, 0.5);
+
+  float2 rightDown = pos.xy + float2(0.5, -0.5);
+
+  float2 rightUp = pos.xy + float2(0.5, 0.5);
+
+  bool isContains = ContainsQuadrangle(leftDown, leftUp, rightDown, rightUp, clickPoint.xy);
+  
+  if (isContains)
+  {
+    // positionBuffer[id.x].position.w=2;
+    clickPointsBuff[0] = positionBuffer[id.x];
+    clickPointsBuff[0].moveDir = ScreenToWorld(float3(400, 500, 10));
+  }
+}
+//把点转换到屏幕坐标，来判断点是否在屏幕里面
+float3  CheckClickPointInline(float4 position)
+{
+  float4  vertex = UnityObjectToClipPos(position);
+  
+  float4  screenPos = ComputeScreenPos(vertex);
+
+  screenPos.xy=screenPos.xy/screenPos.w;
+
+  float width = screenPos.x * _ScreenParams.x;
+
+  float height = screenPos.y * _ScreenParams.y;
+
+  return float3(width,height,0);
+
+}
+void LerpTex(uint3 id)
+{
+
+  float4 pos = positionBuffer[id.x].position;
+
+  if (pos.w == 0)
+  return; //初始数据w为0的不搞事情  
+
+  //这里用velocity存储插值信息
+  float4 v = positionBuffer[id.x].originalPos;
+  float3 cache = positionBuffer[id.x].initialVelocity;
+
+  if (id.x == rangeRot.x || id.x == rangeRot.y || id.x == rangeRot.z || id.x == rangeRot.w)
+  {
+    v.x = 1;
+    v.y = 0.75;
+  }
+  if (v.y == 0)
+  return; //y=0 没有运算意义,把不旋转的面片屏蔽掉
+
+  v.z += deltaTime;
+  if (v.z >= v.x)//延长时间结束
+  {
+    //开始插值事务
+    float t = v.z - v.x; //得到插值时间
+
+    if (v.y >= 0)//正向插值
+    {
+      v.w = t / v.y;
+      
+      if (v.w > 1)//重置插值数据
+      {
+        v = float4(v.x, -v.y, 0, 1); //-v.y 反向插值的证据
+        cache.x++; //记录改变次数
+      }
+    }
+    else //反向插值
+    {
+      v.w = (-v.y - t) / -v.y;
+      if (v.w <= 0)
+      {
+        v = float4(v.x, -v.y, 0, 0);
+        cache.x++; //记录改变次数
+      }
+    }
+  }
+
+  //旋转两次后一切归位
+  if (cache.x >= 2)
+  {
+    v = float4(0, 0, 0, 0);
+    cache = float3(0, 0, 0);
+  }
+
+
+  positionBuffer[id.x].originalPos = v;
+  positionBuffer[id.x].initialVelocity = cache;
+}
+[numthreads(thread_group_size_x, thread_group_size_y, 1)]
+void CSPositionKernel(uint3 id : SV_DispatchThreadID)
+{
+  // float3 moveTarget = positionBuffer[id.x].moveTarget;
+  // float4 position = positionBuffer[id.x].position;
+  // float4 otherData = positionBuffer[id.x].originalPos;
+  // float3 moveDir = positionBuffer[id.x].moveDir;
+  // float4 velocity = positionBuffer[id.x].velocity;
+  // int picIndex = positionBuffer[id.x].picIndex;
+  // //uvOffset.xyz在状态0 存储的是当前的位置信息，uvOffset.w存储的是参数t,范围（0-1）
+  // float4 uvOffset = positionBuffer[id.x].uvOffset;
+  // float4 uv2Offset = positionBuffer[id.x].uv2Offset;
+  // int stateCode = positionBuffer[id.x].stateCode;
+
+  // uint count;
+  // uint stride;
+  // randomPosData.GetDimensions(count, stride);
+  
+
+  
+  // if(stateCode ==-2)//做类似银河系的圆周运动
+  // {
+    //   float4 rot = rotate_angle_axis(uvOffset.w / RadianRatio, otherData.xyz);
+
+    //   float3 newVector = rotate_vector_at(uvOffset.xyz, float3(0, 0, 0), rot);
+
+    
+    //   position.xyz =srcPos + newVector.xyz ;
+
+    //   uvOffset.xyz = newVector;
+  // }
+  
+  
+
+  // positionBuffer[id.x].velocity = velocity;
+  // positionBuffer[id.x].stateCode = stateCode;
+  // positionBuffer[id.x].moveDir = moveDir;
+  // positionBuffer[id.x].moveTarget = moveTarget;
+  // positionBuffer[id.x].position = position;
+  // positionBuffer[id.x].originalPos = otherData;
+  // positionBuffer[id.x].uvOffset = uvOffset;
+  // positionBuffer[id.x].uv2Offset = uv2Offset;
+  
+  
+}
+
+//位置变换  
+[numthreads(thread_group_size_x, thread_group_size_y, 1)]
+void InitLerp(uint3 id : SV_DispatchThreadID)
+{
+
+  float3 moveTarget = positionBuffer[id.x].moveTarget;
+  float4 position = positionBuffer[id.x].position;
+  float4 otherData = positionBuffer[id.x].originalPos;
+  float3 moveDir = positionBuffer[id.x].moveDir;
+  float4 velocity = positionBuffer[id.x].velocity;
+  int picIndex = positionBuffer[id.x].picIndex;
+  //uvOffset.xyz在状态0 存储的是当前的位置信息，uvOffset.w存储的是参数t,范围（0-1）
+  float4 uvOffset = positionBuffer[id.x].uvOffset;
+  float4 uv2Offset = positionBuffer[id.x].uv2Offset;
+  int stateCode = positionBuffer[id.x].stateCode;
+
+  uint count;
+  uint stride;
+  randomPosData.GetDimensions(count, stride);
+
+
+  
+  position.xyz =srcPos + uvOffset.xyz ;
+  
+  
+  
+  
+
+  positionBuffer[id.x].velocity = velocity;
+  positionBuffer[id.x].stateCode = stateCode;
+  positionBuffer[id.x].moveDir = moveDir;
+  positionBuffer[id.x].moveTarget = moveTarget;
+  positionBuffer[id.x].position = position;
+  positionBuffer[id.x].originalPos = otherData;
+  positionBuffer[id.x].uvOffset = uvOffset;
+  positionBuffer[id.x].uv2Offset = uv2Offset;
+  
+}
