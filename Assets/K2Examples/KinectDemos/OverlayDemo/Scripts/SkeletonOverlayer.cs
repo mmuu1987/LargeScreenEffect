@@ -45,7 +45,7 @@ public class SkeletonOverlayer : MonoBehaviour
 				{
 					joints[i] = Instantiate(jointPrefab) as GameObject;
 					joints[i].transform.parent = transform;
-					joints[i].name = ((KinectInterop.JointType)i).ToString();
+					joints[i].name = ((KinectInterop.JointType)i).ToString()+"_"+i;
 					joints[i].SetActive(false);
 				}
 			}

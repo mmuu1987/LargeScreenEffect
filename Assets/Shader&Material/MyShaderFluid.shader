@@ -14,8 +14,8 @@
              Tags { "Queue" = "Transparent"   "RenderType" = "Transparent"   "IgnoreProjection" = "True"}
 
             //Blend[MySrcMode][MyDstMode]
-             ZWrite Off
-             Blend SrcAlpha OneMinusSrcAlpha
+             ZWrite on
+            // Blend SrcAlpha OneMinusSrcAlpha
           
            
 
@@ -79,7 +79,7 @@
                if (col.a <= _Range)col.a = 0;
                //else col.a = 0.5;
 
-               //if (col.a <= 0)discard;
+               if (col.a <= 0)discard;
                return col;
             }
 

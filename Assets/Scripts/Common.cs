@@ -11,8 +11,20 @@ public static class Common
 {
 
 
-    
 
+    /// <summary>
+    /// 交互的类别
+    /// </summary>
+    public static int Category = 0;
+
+    /// <summary>
+    /// 状态码
+    /// </summary>
+    public static int StateCode;
+    /// <summary>
+    /// 种类的状态码
+    /// </summary>
+    public static Dictionary<int, List<int>> CategoryDic = new Dictionary<int, List<int>>();
     /// <summary>
     /// 图片的宽
     /// </summary>
@@ -42,6 +54,73 @@ public static class Common
     /// </summary>
     public static Int64 PictureIndex;
 
+    /// <summary>
+    /// 骨骼连接点
+    /// </summary>
+    public static Dictionary<int,List<int>>  BonePos = new Dictionary<int, List<int>>();
+
+    public static void Init()
+    {
+        CategoryDic.Add(0, new List<int> { 0 });
+        CategoryDic.Add(1, new List<int> { 2, 1 });
+        CategoryDic.Add(2, new List<int> { 3 });
+
+        BonePos.Add(0, new List<int>() { 2, 3 });
+        BonePos.Add(1,new List<int>(){0,1});
+        BonePos.Add(2, new List<int>() { 0, 16 });
+        BonePos.Add(3, new List<int>() { 0, 12 });
+        BonePos.Add(4, new List<int>() { 16, 17});
+        BonePos.Add(5, new List<int>() { 17, 18 });
+        BonePos.Add(6, new List<int>() { 18, 19 });
+        BonePos.Add(7, new List<int>() { 12, 13 });
+        BonePos.Add(8, new List<int>() { 13, 14 });
+        BonePos.Add(9, new List<int>() { 14, 15 });
+        BonePos.Add(10, new List<int>() { 1, 20 });
+        BonePos.Add(11, new List<int>() { 20, 8 });
+        BonePos.Add(12, new List<int>() { 8, 9 });
+        BonePos.Add(13, new List<int>() { 9, 10 });
+        BonePos.Add(14, new List<int>() { 10, 11 });
+        BonePos.Add(15, new List<int>() { 20, 4 });
+        BonePos.Add(16, new List<int>() { 4, 5 });
+        BonePos.Add(17, new List<int>() { 5, 6 });
+        BonePos.Add(18, new List<int>() { 6, 7 });
+        BonePos.Add(19, new List<int>() { 20, 2 });
+        
+    }
+    /// <summary>
+    /// 根据种类所包含的状态码，过滤掉不属于该种类的状态码
+    /// </summary>
+    /// <param name="stateCode">状态码</param>
+    /// <returns></returns>
+    public static void Filter(Action<bool> action)
+    {
+        //根据不同的交互类型过滤
+        if (CategoryDic.ContainsKey(Common.Category))
+        {
+            List<int> values = CategoryDic[Common.Category];
+
+            if (values.Contains(StateCode)) action(true);
+            return;
+        }
+
+        action(false);
+    }
+
+    /// <summary>
+    /// 改变种类
+    /// </summary>
+    public static void ChangeCategory()
+    {
+        Category++;
+
+        if (!CategoryDic.ContainsKey(Category))
+        {
+            Category = 0;
+           
+        }
+       
+        StateCode = CategoryDic[Category][0];//改变一个种类就要设置这个种类的初始状态码
+    }
     public static float GetCross(Vector2 p1, Vector2 p2, Vector2 p)
     {
         return (p2.x - p1.x) * (p.y - p1.y) - (p.x - p1.x) * (p2.y - p1.y);
@@ -227,15 +306,6 @@ public static class Common
         files.Close();
         return imgByte;
     }
-
-  
-
-  
-
-    public enum ZoomType { NearestNeighborInterpolation, BilinearInterpolation }
-    
-
-    
 
 
     /// <summary>

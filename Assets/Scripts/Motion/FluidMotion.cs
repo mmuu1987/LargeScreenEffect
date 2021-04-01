@@ -19,7 +19,7 @@ public class FluidMotion : MotionInputMoveBase
     /// <summary>
     /// 点击作用的半径
     /// </summary>
-    public float ForceRadius=2f;
+    public float ForceRadius = 2f;
 
     public Vector3 ForcePos;
 
@@ -60,7 +60,7 @@ public class FluidMotion : MotionInputMoveBase
 
     public float dt = 0.1f;
 
-    public Vector3  RanomPos;
+    public Vector3 RanomPos;
 
     public ComputeShader ScaleImageComputeShader;
 
@@ -76,16 +76,20 @@ public class FluidMotion : MotionInputMoveBase
     /// <summary>
     /// 粒子生成后，所占的比例，int为ID，float为比例
     /// </summary>
-    public Dictionary<int,float> GenerateRatios= new Dictionary<int, float>();
+    public Dictionary<int, float> GenerateRatios = new Dictionary<int, float>();
 
+    public PositionConvert PositionConvert;
 
     protected override void Init()
     {
         base.Init();
+        Common.Init();
 
-       
         GenerateRatios.Add(0, 0.3f);
         GenerateRatios.Add(1, 0.7f);
+
+
+
 
         MotionType = MotionType.Fluid;
 
@@ -104,7 +108,7 @@ public class FluidMotion : MotionInputMoveBase
 
         TextureInstanced.Instance.ChangeInstanceMat(CurMaterial);
         CurMaterial.enableInstancing = true;
-        RanomPos = new Vector3(20, 12, 1);
+       // RanomPos = new Vector3(20, 12, 1);
 
         SetData(_posDirs);
 
@@ -115,7 +119,7 @@ public class FluidMotion : MotionInputMoveBase
 
         colorBuffer.SetData(colors);
         ComputeBuffer.SetData(_posDirs);
-        
+
 
         CurMaterial.SetVector("_WHScale", new Vector4(1f, 1f, 1f, 1f));
         CurMaterial.SetBuffer("positionBuffer", ComputeBuffer);
@@ -128,7 +132,7 @@ public class FluidMotion : MotionInputMoveBase
         mpb.SetTexture("_TexArr", TextureInstanced.Instance.TexArr);
 
         ComputeShader.SetBuffer(dispatchID, "positionBuffer", ComputeBuffer);
-      
+
         //因不能从unityCG.cginc里拿到屏幕参数，所以从这里传入进去
         ComputeShader.SetInt("ScreenWidth", Screen.width);
         ComputeShader.SetInt("ScreenHeight", Screen.height);
@@ -138,7 +142,7 @@ public class FluidMotion : MotionInputMoveBase
         ComputeShader.SetFloat("dt", Time.deltaTime);
         ComputeShader.SetVector("TargetPosLeft", TargetPosLeft.position);
         ComputeShader.SetVector("TargetPosRight", TargetPosRight.position);
-        ComputeShader.SetVector("Range", new Vector4(RanomPos.x/2, RanomPos.y/2, RanomPos.z/2,1));
+        ComputeShader.SetVector("Range", new Vector4(RanomPos.x / 2, RanomPos.y / 2, RanomPos.z / 2, 1));
 
         DivergenceRT = new RenderTexture(TexWidth, TexHeight, 0, RenderTextureFormat.RHalf); DivergenceRT.Create();
         DyeRT = new RenderTexture(TexWidth, TexHeight, 0, RenderTextureFormat.ARGBHalf); DyeRT.Create();
@@ -161,7 +165,7 @@ public class FluidMotion : MotionInputMoveBase
         BlockRT.Create();
         int k = ScaleImageComputeShader.FindKernel("CSMain");
         ScaleImageComputeShader.SetTexture(k, "Dst", BlockRT);
-       // Vector4 = new Vector4(TexWidth / 2, TexHeight / 2, 50f, 0f);
+        // Vector4 = new Vector4(TexWidth / 2, TexHeight / 2, 50f, 0f);
         Vector4 = new Vector4(640, 360, 50f, 0f);
 
         ComputeShader.SetTexture(dispatchID, "VelocityTemp", VelocityRT2Temp);
@@ -169,47 +173,37 @@ public class FluidMotion : MotionInputMoveBase
         Graphics.Blit(null, InitDyeRT, InitDyeMat);
         Graphics.Blit(null, BlockRT, BlockMat);
 
-        PositionConvert.Instance.HandEvent += HandEvent;
+       
     }
 
-    private void HandEvent(bool obj)
-    {
-        if (obj)
-        {
-            StateCode = 2;
-        }
-        else
-        {
-            StateCode = 1;
-        }
-    }
+    
 
     private void OnDestroy()
     {
-        PositionConvert.Instance.HandEvent -= HandEvent;
+        
     }
-    private void SetData(PosAndDir [] data)
+    private void SetData(PosAndDir[] data)
     {
         float temp = 0f;
         foreach (KeyValuePair<int, float> pair in GenerateRatios)
         {
             temp += pair.Value;
         }
-        if(Math.Abs(temp - 1f) > 0.0000001f)throw new UnityException("粒子比例相加不为1");
+        if (Math.Abs(temp - 1f) > 0.0000001f) throw new UnityException("粒子比例相加不为1");
 
         int index = 0;
         float beginPosX = Camera.main.ScreenToWorldPoint(new Vector3(0, 0, Zdepth)).x;
         //粒子位置的取值范围
-        
+
         List<Vector2> randomPos2 = Common.Sample2D(RanomPos.x, RanomPos.y, 0.1f, 30);
-        float heightTest = 0f;  
-      
+        float heightTest = 0f;
+
         foreach (KeyValuePair<int, float> pair in GenerateRatios)
         {
             int count = (int)(data.Length * pair.Value);
             int key = pair.Key;
-            Debug.Log("id " +pair.Key +" 生成个数是：" + count +"   随机生成个数是： " + count   );
-            
+            Debug.Log("id " + pair.Key + " 生成个数是：" + count + "   随机生成个数是： " + count);
+
             if (pair.Key == 0) heightTest = 0f;
             else heightTest = 0f;
 
@@ -237,16 +231,19 @@ public class FluidMotion : MotionInputMoveBase
                 _posDirs[i].bigIndex = key;//大类ID
                 _posDirs[i].initialVelocity = new Vector3(xScale, yScale, 0f);//填充真实宽高
                 Vector2 rangeVector2 = randomPos2[Random.Range(0, randomPos2.Count)];
-                Vector4 value = new Vector4(rangeVector2.x - RanomPos.x / 2, rangeVector2.y - RanomPos.y / 2+ heightTest, Zdepth + Random.Range(0, RanomPos.z), 0f);
+                Vector4 value = new Vector4(rangeVector2.x - RanomPos.x / 2, rangeVector2.y - RanomPos.y / 2 + heightTest, Zdepth + Random.Range(0, RanomPos.z), 0f);
                 //Vector4 value = new Vector4(Random.Range(-ranomPos.x, ranomPos.x)+ camPos.x, Random.Range(-ranomPos.y, ranomPos.y)+ camPos.y, Random.Range(0, ranomPos.z)+ camPos.z, 1f);
                 _posDirs[i].position = value;
                 _posDirs[i].moveDir = Vector3.zero;
                 _posDirs[i].originalPos = value;
                 _posDirs[i].stateCode = 0;//状态码
-
-                _posDirs[i].velocity = new Vector3(Random.Range(-0.1f,0.1f), Random.Range(-0.1f, 0.1f), 0f);
-                //第一个参数是时间间隔，第二个参数在computeshader那边保存时间缓存,第三个参数为速度,第四个参数为第二第三状态的时间间隔
-                _posDirs[i].uvOffset = new Vector4(Random.Range(3f,10f), 0f, Random.Range(0.05f,0.1f), Random.Range(0f,1f));
+                //存储两根骨骼数据的数组索引
+                List<int> indexs = Common.BonePos[Random.Range(0, Common.BonePos.Count)];
+                
+                _posDirs[i].indexRC = new Vector2(indexs[0], indexs[1]);
+                _posDirs[i].velocity = new Vector3(Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f), 0f);
+                //第一个参数是时间间隔，第二个参数在computeshader那边保存时间缓存,第三个参数为速度,第四个参数为第二状态的时间间隔，第三状态的随机值
+                _posDirs[i].uvOffset = new Vector4(Random.Range(3f, 10f), 0f, Random.Range(0.05f, 0.1f), Random.Range(0f, 1f));
 
 
             }
@@ -300,7 +297,7 @@ public class FluidMotion : MotionInputMoveBase
         AdvectionDyeMat.SetFloat("dt", dt);
         Graphics.Blit(DyeRT2, DyeRT, AdvectionDyeMat);
 
-       // MoveObject(VelocityRT2);
+        // MoveObject(VelocityRT2);
         //第七步：显示
         DisplayMat.SetTexture("BlockTex", BlockRT);
         //DisplayRainbowMat.SetTexture("BlockTex", BlockRT);
@@ -311,11 +308,11 @@ public class FluidMotion : MotionInputMoveBase
         Tip.texture = VelocityRT2;
     }
 
-   
-   
+
+
     protected override void Dispatch(ComputeBuffer system)
     {
-       // UpdateRt();
+        // UpdateRt();
 
 
         //屏幕坐标转为投影坐标矩阵
@@ -330,15 +327,30 @@ public class FluidMotion : MotionInputMoveBase
         ComputeShader.SetMatrix("ip", ip);
         ComputeShader.SetMatrix("iv", iv);
 
-        
+
         ComputeShader.SetTexture(dispatchID, "Velocity", VelocityRT2);
-        ComputeShader.SetInt("StateCode", StateCode);
+
+
+        
+        ComputeShader.SetVectorArray("bonePos", PositionConvert.GetPosArray());
+        //根据不同的交互类型过滤不
+
+
+        Common.Filter((b =>
+        {
+            if(b) ComputeShader.SetInt("StateCode", Common.StateCode);
+        } ));
+            
+
+
+
         ComputeShader.SetFloat("Seed", Random.Range(0f, 1f));
         ComputeShader.SetFloat("dt", Time.deltaTime);
-       
-        if(StateCode!=1)
-         ComputeShader.SetVector("TargetPosLeft", GetWorldPos());
+        
+        if (Common.Category == 0)
+            ComputeShader.SetVector("TargetPosLeft", GetWorldPos());
         ComputeShader.SetVector("TargetPosRight", TargetPosRight.position);
+        //ComputeShader.SetVectorArray();
         ////因不能从unityCG.cginc里拿到屏幕参数，所以从这里传入进去
         //ComputeShader.SetInt("ScreenWidth", Screen.width);
         //ComputeShader.SetInt("ScreenHeight", Screen.height);
@@ -352,13 +364,13 @@ public class FluidMotion : MotionInputMoveBase
 
     private Vector3 GetWorldPos()
     {
-        Vector3 screenPos = PositionConvert.Instance.GetScreenPos("HandLeft");
+        Vector3 screenPos = PositionConvert.Instance.GetScreenPos("HandRight");
 
         Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 30.5f));
 
         return worldPos;
 
-        
+
     }
 
     public void ScaleImageUserRt()
@@ -384,7 +396,7 @@ public class FluidMotion : MotionInputMoveBase
         //删掉rtDes,SourceTexture2D，我们就得到了所要的目标，并且不产生内存垃圾
     }
 
-   
+
 
 
 }

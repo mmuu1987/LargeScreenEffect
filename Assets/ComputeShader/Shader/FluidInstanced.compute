@@ -25,7 +25,9 @@ int ScreenWidth;
 int ScreenHeight;
 float OpenSpeed = 1;
 int StateCode = 0;
-string str = "test";
+
+
+float4 bonePos [25];
 
 //着力点
 float3 TargetPosLeft;
@@ -78,6 +80,36 @@ float2 WorldToScreenPos(float3 pos)
 	return float2(screenPos.x, screenPos.y);
 }
 
+
+//把屏幕坐标转成世界坐标，支持相机旋转
+float3 ScreenToWorldMatrix(float3 p)
+{
+    float px = p.x / ScreenWidth;
+ 
+    px = (px - 0.5f) / 0.5f;
+ 
+    float py = p.y / ScreenHeight;
+ 
+    py = (py - 0.5f) / 0.5f;
+ 
+    float3 ppos = float3(px, py, p.z); //得到了齐次坐标
+ 
+    ppos = float3(ppos.x * p.z, ppos.y * p.z, p.z); //反透视除法
+ 
+  //反透视除法后得到了摄像机坐标
+   float4  camPos = mul(ip, float4(ppos, ppos.z));
+ 
+  //下面就是从相机坐标转换到世界坐标空间
+    float3 worldPos = mul(iv, float4(camPos.xyz, 1)).xyz;
+ 
+  //得到的坐标为世界坐标
+    return worldPos;
+ 
+ 
+}
+
+
+
 float rand(in float2 uv)
 {
 	float2 noise = (frac(sin(dot(uv, float2(12.9898, 78.233) * 2.0)) * 43758.5453));
@@ -99,13 +131,13 @@ inline float ValueNoise(float3 pos)
 
 
 //根据位置获取随机速度
-float2 GetVelocity(float3 pos)
+float2 GetVelocity(float3 pos,float n=100)
 {
 	float2 newScreenPos = WorldToScreenPos(pos);
 
-	float v1 = random(float2(newScreenPos.y, newScreenPos.x), 100);
+    float v1 = random(float2(newScreenPos.y, newScreenPos.x), n);
 
-	float v2 = random(newScreenPos, 100);
+    float v2 = random(newScreenPos, n);
 
     //转换到[-1,1]区间，上面的V1,V2数值范围为[0,1],我们通过-0.5  *2 来转换
 	v1 = (v1 - 0.5) * 2;
@@ -182,7 +214,83 @@ void RandMove(uint3 id : SV_DispatchThreadID)
 
 }
 
+//粒子图改变成骨架形状
+void ChangeSkeleton(uint3 id : SV_DispatchThreadID)
+{
+    float4 pos = positionBuffer[id.x].position;
 
+    float4 originalPos = positionBuffer[id.x].originalPos;
+
+    float3 moveDir = positionBuffer[id.x].moveDir;
+	
+    float2 indexRC =  positionBuffer[id.x].indexRC;
+	
+    float4 timeTemp = positionBuffer[id.x].uvOffset;
+	
+    float4 velocity = positionBuffer[id.x].velocity;
+	
+    int stateCode = positionBuffer[id.x].stateCode;
+	
+	
+    float3 p1 = bonePos[indexRC.x];//得到第一个骨骼点位置
+    //p1 = ScreenToWorldMatrix(float3(p1.x, p1.y, 30.5));
+	
+    float3 p2 = bonePos[indexRC.y];//得到第二个骨骼点位置
+   // p2 = ScreenToWorldMatrix(float3(p2.x, p2.y, 30.5));
+	
+	
+	
+	
+    float _timeScale = 0.1;//_timeScale 为时间缩放系数
+    float _width = 8; //width为宽度系数
+    float _speed = 4; //width为速度系数
+	
+	
+	
+    if (stateCode != StateCode)//如果是从其他状态切换到该状态
+    {
+        float2 v = GetVelocity(originalPos);
+        moveDir.x = v.x / 2 + 0.5;
+        if (moveDir.x <= 0.1)
+        {
+            moveDir.x = 0.1;
+
+        }
+        stateCode = StateCode;
+        timeTemp.y = 0;
+    }
+	
+    if (timeTemp.y <= timeTemp.x * _timeScale)
+    {
+        timeTemp.y += dt;
+    }
+    else
+    {
+       
+        float2 velocityTemp = GetVelocity(pos.xyz);
+        velocityTemp = normalize(velocityTemp) * timeTemp.z * _width * timeTemp.w; //timeTemp.w值为随机数，范围0-1
+        timeTemp.y = 0;
+        velocity.xy = velocityTemp;
+    }
+	
+	
+    float3 p3 = lerp(p1, p2, timeTemp.w);//这里取得的值是不变的
+	
+    p3.xy = p3.xy + velocity.xy;
+	
+    pos.xyz = lerp(pos.xyz, p3, dt * _speed * (0.1 + timeTemp.w)); //0.1+timeTemp.w为随机速度，加上0.1不至于速度太慢
+	
+    positionBuffer[id.x].position = pos;
+    positionBuffer[id.x].moveDir = moveDir;
+	
+    positionBuffer[id.x].uvOffset = timeTemp;
+    
+    positionBuffer[id.x].stateCode = stateCode;
+	
+    positionBuffer[id.x].velocity = velocity;
+	
+	
+}
 //自由迁移运动
 void FreeMove(uint3 id : SV_DispatchThreadID)
 {
@@ -202,6 +310,8 @@ void FreeMove(uint3 id : SV_DispatchThreadID)
     //从速度贴图上根据该点的位置获取速度
    /* half2  v = Velocity[int2(screenPos.x, (ScreenHeight - screenPos.y))];
     pos.xy += v *1 ;*/
+	
+	
     float d = distance(pos.xy, TargetPosLeft.xy);
 
 	float2 v;
@@ -359,6 +469,11 @@ void CSPositionKernel(uint3 id : SV_DispatchThreadID)
 		diffuseState(id);
 
 	}
+	else if(StateCode==3)//跟随人性骨骼状态
+    {
+        ChangeSkeleton(id);
+
+    }
 	
 		
    

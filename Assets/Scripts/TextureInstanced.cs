@@ -253,8 +253,8 @@ public class TextureInstanced : MonoBehaviour, IDragHandler, IEndDragHandler
         {
             
             UpdateBuffers(Type);
-            // Render
-            Graphics.DrawMeshInstancedIndirect(InstanceMesh, 0, CurMaterial, InstanceMesh.bounds, argsBuffer, 0, null, ShadowCastingMode.Off, false);
+            if(Type!=MotionType.None) // Render
+                Graphics.DrawMeshInstancedIndirect(InstanceMesh, 0, CurMaterial, InstanceMesh.bounds, argsBuffer, 0, null, ShadowCastingMode.Off, false);
             
         }
        
@@ -444,6 +444,8 @@ public class TextureInstanced : MonoBehaviour, IDragHandler, IEndDragHandler
    
     void OnDisable()
     {
+        //Debug.Log("OnDisable");
+
         if (positionBuffer != null) positionBuffer.Release();
         positionBuffer = null;
 

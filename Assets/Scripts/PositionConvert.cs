@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,7 +23,9 @@ public class PositionConvert : MonoBehaviour
 
     public static PositionConvert Instance;
     
-
+    /// <summary>
+    /// 每个关节的屏幕位置
+    /// </summary>
     public Dictionary<string,Vector3> ScreenPosDictionary = new Dictionary<string, Vector3>();
 
     
@@ -177,7 +180,9 @@ public class PositionConvert : MonoBehaviour
             {
                 //Debug.LogError("双手合实");
                 _isOpenHand = false;
+
                 if (HandEvent != null) HandEvent(false);
+                Common.StateCode = 1;
             }
            
         }
@@ -188,6 +193,7 @@ public class PositionConvert : MonoBehaviour
                // Debug.LogError("双手张开");
                 _isOpenHand = true;
                 if (HandEvent != null) HandEvent(true);
+                Common.StateCode = 2;
             }
            
         }
@@ -199,9 +205,22 @@ public class PositionConvert : MonoBehaviour
         if (ScreenPosDictionary.ContainsKey(joint))
         {
             Vector3 temp = ScreenPosDictionary[joint];
-            return new Vector2(1920 - temp.x, temp.y);
+            return new Vector2( temp.x, temp.y);
         }
 
         return Vector3.zero;
+    }
+
+    public Vector4[] GetPosArray()
+    {
+       List<Vector4> tempList = new List<Vector4>();
+       foreach (Vector3 vector3 in ScreenPosDictionary.Values)
+       {
+           Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(vector3.x, vector3.y, 30.5f));
+            tempList.Add(new Vector4(worldPos.x, worldPos.y, worldPos.z,1));
+       }
+
+       return tempList.ToArray();
+
     }
 }
