@@ -185,7 +185,7 @@ MonoBehaviour:
   displayUserMap: 0
   displayColorMap: 1
   displaySkeletonLines: 0
-  DisplayMapsWidthPercent: 20
+  DisplayMapsWidthPercent: 12
   useMultiSourceReader: 1
   minUserDistance: 0.5
   maxUserDistance: 0
@@ -1791,7 +1791,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1287846002
 RectTransform:
   m_ObjectHideFlags: 0
