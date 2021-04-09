@@ -55,7 +55,7 @@
 			v2f vert (appdata v)
 			{
 				v2f o;
-				//if(v.vid==0)v.vertex.x+=_Rnage;
+				if(v.vid==0)v.vertex.x+=_Rnage;
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
 				o.Col = ValueNoise(v.vertex.xyz);

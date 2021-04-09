@@ -183,7 +183,10 @@ public class TextureInstanced : MonoBehaviour, IDragHandler, IEndDragHandler
     /// </summary>
     public int VerticalColumn = 10;
 
-   
+
+    public ShadowCastingMode IsCastShadows;
+    public bool IsReceiveShadows;
+
 
 
     private uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
@@ -259,7 +262,7 @@ public class TextureInstanced : MonoBehaviour, IDragHandler, IEndDragHandler
             
             UpdateBuffers(Type);
             if(Type!=MotionType.None) // Render
-                Graphics.DrawMeshInstancedIndirect(InstanceMesh, 0, CurMaterial, InstanceMesh.bounds, argsBuffer, 0, null, ShadowCastingMode.Off, false);
+                Graphics.DrawMeshInstancedIndirect(InstanceMesh, 0, CurMaterial, InstanceMesh.bounds, argsBuffer, 0, null, IsCastShadows, IsReceiveShadows);
             
         }
        

@@ -1,8 +1,11 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
-
+using Random = UnityEngine.Random;
 
 
 public class VertexMovemontMotion : MotionInputMoveBase
@@ -13,15 +16,23 @@ public class VertexMovemontMotion : MotionInputMoveBase
     private int TexHeight = Screen.height;
     public Material CurMaterial;
     public Vector3 RanomPos;
+
+    private MeshData _meshData;
     /// <summary>
     /// 与相机的距离
     /// </summary>
     private float Zdepth = 30;
+
+    private ComputeBuffer _meshDataBuffer;
+
+  
     protected override void Init()
     {
         base.Init();
 
         MotionType = MotionType.VertexMovement;
+
+        LoadAnimationData();
 
         Debug.Log("screen width is " + Screen.width + "  screen height is " + Screen.height);
         TexWidth = Screen.width;
@@ -54,6 +65,10 @@ public class VertexMovemontMotion : MotionInputMoveBase
         CurMaterial.SetBuffer("positionBuffer", ComputeBuffer);
         CurMaterial.SetBuffer("colorBuffer", colorBuffer);
         CurMaterial.SetTexture("_TexArr", TextureInstanced.Instance.TexArr);
+       
+        CurMaterial.SetInt("_VertexSize", _meshData.VertexSize);
+        CurMaterial.SetInt("_VertexCount", _meshData.VertexCount);
+        CurMaterial.SetBuffer("VertexBuffer", _meshDataBuffer);
 
 
 
@@ -85,7 +100,7 @@ public class VertexMovemontMotion : MotionInputMoveBase
         {
             int picIndex = 0;
 
-            _posDirs[i].picIndex = picIndex;
+            _posDirs[i].picIndex = i%TextureInstanced.Instance.TexArr.depth;
 
             _posDirs[i].bigIndex = 0;//大类ID
             _posDirs[i].initialVelocity = new Vector3(1, 1, 0f);//填充真实宽高
@@ -106,6 +121,33 @@ public class VertexMovemontMotion : MotionInputMoveBase
 
 
         }
+    }
+
+    /// <summary>
+    /// 导入动画数据
+    /// </summary>
+    private void LoadAnimationData()
+    {
+        string path = Application.streamingAssetsPath + "/data.txt";
+
+        using (FileStream fileStream = File.OpenRead(path))
+        {
+            BinaryFormatter binaryFormatter = new BinaryFormatter();
+            _meshData = (MeshData)binaryFormatter.Deserialize(fileStream);
+        }
+
+        int stride = Marshal.SizeOf(typeof(Vector3));
+        Debug.Log("stride byte size is " + stride);
+
+        Vector3[] temps =new Vector3[_meshData.VertexPosData.Length];
+
+        for (int i = 0; i < _meshData.VertexPosData.Length; i++)
+        {
+            temps[i] = _meshData.VertexPosData[i].ConevrtVector3();
+        }
+        _meshDataBuffer = new ComputeBuffer(_meshData.VertexPosData.Length, stride);
+        _meshDataBuffer.SetData(temps);
+
     }
     protected override void Dispatch(ComputeBuffer system)
     {
@@ -138,5 +180,35 @@ public class VertexMovemontMotion : MotionInputMoveBase
         ComputeShader.SetFloat("Seed", Random.Range(0f, 1f));
         ComputeShader.SetFloat("dt", Time.deltaTime);
         base.Dispatch(dispatchID, system);
+    }
+}
+[Serializable]
+public class MeshData
+{
+    public int VertexCount;
+
+    public int VertexSize;
+
+    public Vector3Data[] VertexPosData;
+
+}
+[Serializable]
+public class Vector3Data
+{
+    public float X;
+    public float Y;
+    public float Z;
+
+    public Vector3Data(Vector3 vector3)
+    {
+        X = vector3.x;
+        Y = vector3.y;
+        Z = vector3.z;
+    }
+
+    public Vector3 ConevrtVector3()
+    {
+        Vector3 v = new Vector3(X,Y,Z);
+        return v;
     }
 }
