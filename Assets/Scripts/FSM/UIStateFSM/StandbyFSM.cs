@@ -15,7 +15,7 @@ public class StandbyFSM : UIStateFSM
 
     public override void Enter()
     {
-        TextureInstanced.Instance.Type = MotionType.Fluid;
+        TextureInstanced.Instance.Type = MotionType.VertexMovement;
         KinectManager.Instance.ClearKinectUsers();
         KinectManager.Instance.maxTrackedUsers = 1;
         base.Enter();

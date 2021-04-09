@@ -134,7 +134,11 @@ public enum MotionType
     /// <summary>
     /// 流体运动
     /// </summary>
-    Fluid
+    Fluid,
+    /// <summary>
+    /// 物体顶点运动
+    /// </summary>
+    VertexMovement
 }
 /// <summary>
 /// This demo shows the use of Compute Shaders to update the object's
@@ -194,6 +198,7 @@ public class TextureInstanced : MonoBehaviour, IDragHandler, IEndDragHandler
 
 
     public FluidMotion FluidMotion;
+    public VertexMovemontMotion VertexMovemontMotion;
 
     public static TextureInstanced Instance;
 
@@ -260,28 +265,7 @@ public class TextureInstanced : MonoBehaviour, IDragHandler, IEndDragHandler
        
     }
 
-    void OnWillRenderObject()
-    {
-       
-
-    
-        
-    }
-
-    private WaitForEndOfFrame wef = new WaitForEndOfFrame();
-    IEnumerator WaitEnd()
-    {
-        while (true)
-        {
-            yield return wef;
-            if (_isInit)
-            {
-                UpdateBuffers(Type);
-            }
-
-        }
-    }
-
+   
     /// <summary>
     /// 用不同的材质渲染实例对象
     /// </summary>
@@ -330,7 +314,16 @@ public class TextureInstanced : MonoBehaviour, IDragHandler, IEndDragHandler
     {
        
         FluidMotion.StartMotion(this);
-        
+        VertexMovemontMotion.ExitMotion();
+
+
+    }
+
+    void UpdateVertexMovemontMotion()
+    {
+        VertexMovemontMotion.StartMotion(this);
+        FluidMotion.ExitMotion();
+
     }
 
     public void CubeType()
@@ -372,6 +365,9 @@ public class TextureInstanced : MonoBehaviour, IDragHandler, IEndDragHandler
                 break;
             case MotionType.Fluid:
                 UpdateFluidMotion();
+                break;
+            case MotionType.VertexMovement:
+                UpdateVertexMovemontMotion();
                 break;
             default:
                 throw new ArgumentOutOfRangeException("type", type, null);

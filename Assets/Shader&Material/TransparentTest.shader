@@ -3,7 +3,7 @@
 	Properties
 	{
 		_MainTex ("Texture", 2D) = "white" {}
-		_Rnage("Range",Range(0,1)) =0.5
+		_Rnage("Range",Range(0,3)) =0.5
 	}
 	SubShader
 	{
@@ -27,12 +27,13 @@
 			{
 				float4 vertex : POSITION;
 				float2 uv : TEXCOORD0;
+				uint vid : SV_VertexID;
 			};
 
 			struct v2f
 			{
 				float2 uv : TEXCOORD0;
-			
+			    fixed4 Col:TEXCOORD1;
 				float4 vertex : SV_POSITION;
 			};
 
@@ -54,9 +55,10 @@
 			v2f vert (appdata v)
 			{
 				v2f o;
+				//if(v.vid==0)v.vertex.x+=_Rnage;
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-				
+				o.Col = ValueNoise(v.vertex.xyz);
 				return o;
 			}
 			

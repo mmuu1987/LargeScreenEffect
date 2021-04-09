@@ -114,7 +114,7 @@ public class FluidMotion : MotionInputMoveBase
 
         MaterialPropertyBlock mpb = new MaterialPropertyBlock();
 
-        TextureInstanced.Instance.MeMaterialPropertyBlock = mpb;
+        
 
 
         colorBuffer.SetData(colors);
@@ -126,10 +126,7 @@ public class FluidMotion : MotionInputMoveBase
         CurMaterial.SetBuffer("colorBuffer", colorBuffer);
         CurMaterial.SetTexture("_TexArr", TextureInstanced.Instance.TexArr);
 
-        mpb.SetVector("_WHScale", new Vector4(1f, 1f, 1f, 1f));
-        mpb.SetBuffer("positionBuffer", ComputeBuffer);
-        mpb.SetBuffer("colorBuffer", colorBuffer);
-        mpb.SetTexture("_TexArr", TextureInstanced.Instance.TexArr);
+      
 
         ComputeShader.SetBuffer(dispatchID, "positionBuffer", ComputeBuffer);
 
@@ -202,6 +199,7 @@ public class FluidMotion : MotionInputMoveBase
         {
             int count = (int)(data.Length * pair.Value);
             int key = pair.Key;
+
             Debug.Log("id " + pair.Key + " 生成个数是：" + count + "   随机生成个数是： " + count);
 
             if (pair.Key == 0) heightTest = 0f;
@@ -309,7 +307,12 @@ public class FluidMotion : MotionInputMoveBase
     }
 
 
+    private void Test()
+    {
+        Mesh mesh;
 
+       
+    }
     protected override void Dispatch(ComputeBuffer system)
     {
         // UpdateRt();

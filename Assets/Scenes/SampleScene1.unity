@@ -786,7 +786,7 @@ Camera:
   near clip plane: 0.3
   far clip plane: 100
   field of view: 60
-  orthographic: 1
+  orthographic: 0
   orthographic size: 5
   m_Depth: 0
   m_CullingMask:
@@ -1585,6 +1585,7 @@ GameObject:
   - component: {fileID: 1104251576}
   - component: {fileID: 1104251575}
   - component: {fileID: 1104251577}
+  - component: {fileID: 1104251578}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -1690,13 +1691,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   InstanceCount: 100000
-  InstanceMesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+  InstanceMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
   InstanceMaterial: {fileID: 2100000, guid: b7fc842c8b38fde4a9f0f00a85432ccc, type: 2}
-  Type: 8
+  Type: 9
   HorizontalColumn: 120
   VerticalColumn: 120
   TexArr: {fileID: 0}
   FluidMotion: {fileID: 1104251576}
+  VertexMovemontMotion: {fileID: 1104251578}
 --- !u!114 &1104251575
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1776,6 +1778,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d2f14cd013d2e0f4db74b08fc1bee1ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1104251578
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1104251569}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 353f9fa674948bb4d9d1d50909cb2acd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  computeShaderName: CSPositionKernel
+  InitName: InitLerp
+  ComputeShader: {fileID: 7200000, guid: fea96649eff93ee4fb3167c07f2a973b, type: 3}
+  InitTime: 0.2
+  CurMaterial: {fileID: 2100000, guid: 2b142539fdd8d00479d8f2dae28c31ce, type: 2}
+  RanomPos: {x: 100, y: 100, z: 100}
 --- !u!1 &1287846001
 GameObject:
   m_ObjectHideFlags: 0
