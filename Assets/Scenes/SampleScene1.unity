@@ -1691,13 +1691,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   InstanceCount: 100000
-  InstanceMesh: {fileID: 4300000, guid: 4250fb44699af574fa10202256c17536, type: 3}
+  InstanceMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
   InstanceMaterial: {fileID: 2100000, guid: b7fc842c8b38fde4a9f0f00a85432ccc, type: 2}
   Type: 9
   HorizontalColumn: 10
-  VerticalColumn: 10
+  VerticalColumn: 100
   IsCastShadows: 1
-  IsReceiveShadows: 0
+  IsReceiveShadows: 1
   TexArr: {fileID: 0}
   FluidMotion: {fileID: 1104251576}
   VertexMovemontMotion: {fileID: 1104251578}
