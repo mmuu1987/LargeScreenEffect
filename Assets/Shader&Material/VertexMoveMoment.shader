@@ -116,7 +116,7 @@
                 o.ambient = ambient;
                 o.diffuse = diffuse;
                 o.color = color;
-                TRANSFER_SHADOW(o)
+                //TRANSFER_SHADOW(o)
                 return o;
             }
 

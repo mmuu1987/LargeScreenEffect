@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "*.shader": "c",
+    "*.cginc": "c"
+  }
+}

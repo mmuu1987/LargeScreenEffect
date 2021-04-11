@@ -222,6 +222,7 @@ public class TextureInstanced : MonoBehaviour, IDragHandler, IEndDragHandler
 
     private void Awake()
     {
+        Debug.Log(this.name);
         if (Instance != null) throw new UnityException("已经有单例了，不能重复赋值");
 
         Instance = this;
