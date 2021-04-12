@@ -1,136 +1,463 @@
 ﻿Shader "Unlit/VertexMoveMoment"
 {
-    Properties
-    {
-        _MainTex ("Texture", 2D) = "white" {}
-        _Range("Range",Range(-2,2))=0
-        _Frame("Frame",Range(0,100))=0
-        _Angle("Angle",float) =0
+   Properties {
+    _MainTex ("Albedo (RGB)", 2D) = "white" {}
+    _Glossiness ("Smoothness", Range(0,1)) = 0.5
+    _Metallic ("Metallic", Range(0,1)) = 0.0
+    _Range("Range",Range(-2,2))=0
+    _Frame("Frame",Range(0,100))=0
+    _Angle("Angle",float) =0
+    _Color("Color",color) = (1,1,1,1)
+  }
+  SubShader {
+    Tags { "RenderType"="Opaque" }
+    LOD 200
+
+    
+    // ------------------------------------------------------------
+    // Surface shader code generated out of a CGPROGRAM block:
+    
+
+    // ---- forward rendering base pass:
+    Pass {
+      Name "FORWARD"
+      Tags { "LightMode" = "ForwardBase" }
+
+      CGPROGRAM
+      // compile directives
+      #pragma vertex vert_surf
+      #pragma fragment frag_surf
+      #pragma multi_compile_instancing 
+      #pragma multi_compile_fog
+      #pragma multi_compile_fwdbase  nolightmap nodirlightmap nodynlightmap novertexlight
+      #include "HLSLSupport.cginc"
+      #pragma target 4.5
+      #define UNITY_INSTANCED_LOD_FADE
+      #define UNITY_INSTANCED_SH
+      #define UNITY_INSTANCED_LIGHTMAPSTS
+      #include "UnityShaderVariables.cginc"
+      #include "UnityShaderUtilities.cginc"
+      
+      #include "UnityCG.cginc"
+      #include "Lighting.cginc"
+      #include "UnityPBSLighting.cginc"
+      #include "AutoLight.cginc"
+
+      #define INTERNAL_DATA
+      #define WorldReflectionVector(data,normal) data.worldRefl
+      #define WorldNormalVector(data,normal) normal
+
+
+      sampler2D _MainTex;
+      float4 _WHScale;
+      float _Range;
+      uint _VertexCount;
+      uint _VertexSize;
+      uint _Frame;
+      float _Angle;
+      fixed4 _Color;
+      struct Input {
+        float2 uv_MainTex;
+      };
+      struct PosAndDir   {
+        float4 position;
+        float4 velocity;
+        float3 initialVelocity;
+        float4 originalPos;
+        float3 moveTarget;
+        float3 moveDir;
+        float2 indexRC;
+        int picIndex;
+        int bigIndex;
+        float4 uvOffset; 
+        float4 uv2Offset; 
+        int stateCode;
+
+      };
+
+
+      #if SHADER_TARGET >= 45
+        StructuredBuffer<PosAndDir> positionBuffer;
+      #endif
+
+      void rotate2D(inout float2 v, float r)
+      {
+        float s, c;
+        sincos(r, s, c);
+        v = float2(v.x * c - v.y * s, v.x * s + v.y * c);
+      }
+
+      
+      half _Glossiness;
+      half _Metallic;
+
+      void surf (Input IN, inout SurfaceOutputStandard o) {
+        fixed4 c = tex2D (_MainTex, IN.uv_MainTex);
+        o.Albedo = c.rgb* _Color;;
+        o.Metallic = _Metallic;
+        o.Smoothness = _Glossiness;
+        o.Alpha = c.a;
+      }
+      
+
+      
+      // half-precision fragment shader registers:
+      #ifdef UNITY_HALF_PRECISION_FRAGMENT_SHADER_REGISTERS
+        #define FOG_COMBINED_WITH_WORLD_POS
+        struct v2f_surf {
+          UNITY_POSITION(pos);
+          float2 pack0 : TEXCOORD0; // _MainTex
+          float3 worldNormal : TEXCOORD1;
+          float4 worldPos : TEXCOORD2;
+          #if UNITY_SHOULD_SAMPLE_SH
+            half3 sh : TEXCOORD3; // SH
+          #endif
+          UNITY_LIGHTING_COORDS(4,5)
+          #if SHADER_TARGET >= 30
+            float4 lmap : TEXCOORD6;
+          #endif
+          UNITY_VERTEX_INPUT_INSTANCE_ID
+          UNITY_VERTEX_OUTPUT_STEREO 
+        };
+      #endif
+      // high-precision fragment shader registers:
+      #ifndef UNITY_HALF_PRECISION_FRAGMENT_SHADER_REGISTERS
+        struct v2f_surf {
+          UNITY_POSITION(pos);
+          float2 pack0 : TEXCOORD0; // _MainTex
+          float3 worldNormal : TEXCOORD1;
+          float3 worldPos : TEXCOORD2;
+          #if UNITY_SHOULD_SAMPLE_SH
+            half3 sh : TEXCOORD3; // SH
+          #endif
+          UNITY_FOG_COORDS(4)
+          UNITY_SHADOW_COORDS(5)
+          #if SHADER_TARGET >= 30
+            float4 lmap : TEXCOORD6;
+          #endif
+          UNITY_VERTEX_INPUT_INSTANCE_ID
+          UNITY_VERTEX_OUTPUT_STEREO
+        };
+      #endif
+      
+      
+      float4 _MainTex_ST;
+
+      // vertex shader
+      v2f_surf vert_surf (appdata_full v,uint instanceID : SV_InstanceID, uint id:SV_VERTEXID) {
+
+        if(id==1)v.vertex.x+=_Range;
+
+        float4 pos;
+        float3 worldPos;
+        #if SHADER_TARGET >= 45
+          float4 data = positionBuffer[instanceID].position;
+          worldPos = data.xyz + v.vertex.xyz *data.w;
+          pos= mul(UNITY_MATRIX_VP, float4(worldPos, 1.0f));
+        #endif
+        
+        UNITY_SETUP_INSTANCE_ID(v);
+        v2f_surf o;
+        UNITY_INITIALIZE_OUTPUT(v2f_surf,o);
+        UNITY_TRANSFER_INSTANCE_ID(v,o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+        
+        #if SHADER_TARGET >= 45
+          o.pos = pos;
+        #else
+          o.pos = UnityObjectToClipPos(v.vertex);
+        #endif
+        
+        o.pack0.xy = TRANSFORM_TEX(v.texcoord, _MainTex);
+
+
+        #if SHADER_TARGET < 45
+          worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+        #endif
+
+
+
+
+        float3 worldNormal = UnityObjectToWorldNormal(v.normal);
+        o.worldPos.xyz = worldPos;
+        o.worldNormal = worldNormal;
+        UNITY_TRANSFER_LIGHTING(o,v.texcoord1.xy); // pass shadow and, possibly, light cookie coordinates to pixel shader
+        #ifdef FOG_COMBINED_WITH_TSPACE
+          UNITY_TRANSFER_FOG_COMBINED_WITH_TSPACE(o,o.pos); // pass fog coordinates to pixel shader
+        #elif defined (FOG_COMBINED_WITH_WORLD_POS)
+          UNITY_TRANSFER_FOG_COMBINED_WITH_WORLD_POS(o,o.pos); // pass fog coordinates to pixel shader
+        #else
+          UNITY_TRANSFER_FOG(o,o.pos); // pass fog coordinates to pixel shader
+        #endif
+        return o;
+      }
+
+      // fragment shader
+      fixed4 frag_surf (v2f_surf IN) : SV_Target {
+        UNITY_SETUP_INSTANCE_ID(IN);
+        // prepare and unpack data
+        Input surfIN;
+        #ifdef FOG_COMBINED_WITH_TSPACE
+          UNITY_EXTRACT_FOG_FROM_TSPACE(IN);
+        #elif defined (FOG_COMBINED_WITH_WORLD_POS)
+          UNITY_EXTRACT_FOG_FROM_WORLD_POS(IN);
+        #else
+          UNITY_EXTRACT_FOG(IN);
+        #endif
+        UNITY_INITIALIZE_OUTPUT(Input,surfIN);
+        surfIN.uv_MainTex.x = 1.0;
+        surfIN.uv_MainTex = IN.pack0.xy;
+        float3 worldPos = IN.worldPos.xyz;
+        #ifndef USING_DIRECTIONAL_LIGHT
+          fixed3 lightDir = normalize(UnityWorldSpaceLightDir(worldPos));
+        #else
+          fixed3 lightDir = _WorldSpaceLightPos0.xyz;
+        #endif
+        float3 worldViewDir = normalize(UnityWorldSpaceViewDir(worldPos));
+        #ifdef UNITY_COMPILER_HLSL
+          SurfaceOutputStandard o = (SurfaceOutputStandard)0;
+        #else
+          SurfaceOutputStandard o;
+        #endif
+        o.Albedo = 0.0;
+        o.Emission = 0.0;
+        o.Alpha = 0.0;
+        o.Occlusion = 1.0;
+        fixed3 normalWorldVertex = fixed3(0,0,1);
+        o.Normal = IN.worldNormal;
+        normalWorldVertex = IN.worldNormal;
+
+        // call surface function
+        surf (surfIN, o);
+
+        // compute lighting & shadowing factor
+        UNITY_LIGHT_ATTENUATION(atten, IN, worldPos)
+        fixed4 c = 0;
+
+        // Setup lighting environment
+        UnityGI gi;
+        UNITY_INITIALIZE_OUTPUT(UnityGI, gi);
+        gi.indirect.diffuse = 0;
+        gi.indirect.specular = 0;
+        gi.light.color = _LightColor0.rgb;
+        gi.light.dir = lightDir;
+        // Call GI (lightmaps/SH/reflections) lighting function
+        UnityGIInput giInput;
+        UNITY_INITIALIZE_OUTPUT(UnityGIInput, giInput);
+        giInput.light = gi.light;
+        giInput.worldPos = worldPos;
+        giInput.worldViewDir = worldViewDir;
+        giInput.atten = atten;
+        #if defined(LIGHTMAP_ON) || defined(DYNAMICLIGHTMAP_ON)
+          giInput.lightmapUV = IN.lmap;
+        #else
+          giInput.lightmapUV = 0.0;
+        #endif
+        #if UNITY_SHOULD_SAMPLE_SH && !UNITY_SAMPLE_FULL_SH_PER_PIXEL
+          giInput.ambient = IN.sh;
+        #else
+          giInput.ambient.rgb = 0.0;
+        #endif
+        giInput.probeHDR[0] = unity_SpecCube0_HDR;
+        giInput.probeHDR[1] = unity_SpecCube1_HDR;
+        #if defined(UNITY_SPECCUBE_BLENDING) || defined(UNITY_SPECCUBE_BOX_PROJECTION)
+          giInput.boxMin[0] = unity_SpecCube0_BoxMin; // .w holds lerp value for blending
+        #endif
+        #ifdef UNITY_SPECCUBE_BOX_PROJECTION
+          giInput.boxMax[0] = unity_SpecCube0_BoxMax;
+          giInput.probePosition[0] = unity_SpecCube0_ProbePosition;
+          giInput.boxMax[1] = unity_SpecCube1_BoxMax;
+          giInput.boxMin[1] = unity_SpecCube1_BoxMin;
+          giInput.probePosition[1] = unity_SpecCube1_ProbePosition;
+        #endif
+        LightingStandard_GI(o, giInput, gi);
+
+        // realtime lighting: call lighting function
+        c += LightingStandard (o, worldViewDir, gi);
+        UNITY_APPLY_FOG(_unity_fogCoord, c); // apply fog
+        UNITY_OPAQUE_ALPHA(c.a);
+        return c;
+      }
+      ENDCG
+
     }
-    SubShader
-    {
-        Tags { "RenderType"="Opaque" "LightMode"="ForwardBase" }
-        LOD 100
-
-        Pass
-        {
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma multi_compile_fwdbase nolightmap nodirlightmap nodynlightmap novertexlight
-            #pragma target 4.5
-
-            #include "UnityCG.cginc"
-            #include "UnityLightingCommon.cginc"
-            #include "AutoLight.cginc"
 
 
-           
-            #include "Assets/Common/Shaders/Math.cginc"
-            #include "Assets/ComputeShader/GPUParticle.cginc"
+    // ---- shadow caster pass:
+    Pass {
+      Name "ShadowCaster"
+      Tags { "LightMode" = "ShadowCaster" }
+      ZWrite On ZTest LEqual
 
-            struct appdata
-            {
-                float4 vertex : POSITION;
-                float2 uv : TEXCOORD0;
-                uint id:SV_VERTEXID;
-                float3 normal:NORMAL;
-                fixed4 color : COLOR;
-            };
+      CGPROGRAM
+      // compile directives
+      #pragma vertex vert_surf
+      #pragma fragment frag_surf
+      #pragma multi_compile_instancing
+      #pragma skip_variants FOG_LINEAR FOG_EXP FOG_EXP2
+      #pragma multi_compile_shadowcaster
+      #include "HLSLSupport.cginc"
+      #pragma target 4.5
+      #define UNITY_INSTANCED_LOD_FADE
+      #define UNITY_INSTANCED_SH
+      #define UNITY_INSTANCED_LIGHTMAPSTS
+      #include "UnityShaderVariables.cginc"
+      #include "UnityShaderUtilities.cginc"
+      #include "UnityCG.cginc"
+      #include "Lighting.cginc"
+      #include "UnityPBSLighting.cginc"
 
-            struct v2f
-            {
-                float2 uv : TEXCOORD0;
-                float4 vertex : SV_POSITION;
-                uint index:SV_InstanceID;//告诉片元，输送实例ID 必须是uint,
-                float3 ambient : TEXCOORD1;
-                float3 diffuse : TEXCOORD2;
-                float3 color : TEXCOORD3;
-                SHADOW_COORDS(4)
-               
-            };
-           
-            sampler2D _MainTex;
-            float4 _MainTex_ST;
-            float4 _WHScale;
-            float _Range;
-            uint _VertexCount;
-            uint _VertexSize;
-            uint _Frame;
-            float _Angle;
-			#if SHADER_TARGET >= 45
-            StructuredBuffer<PosAndDir> positionBuffer;
-            StructuredBuffer<float3> VertexBuffer;
-			StructuredBuffer<float4> colorBuffer;
-            #endif
+      #define INTERNAL_DATA
+      #define WorldReflectionVector(data,normal) data.worldRefl
+      #define WorldNormalVector(data,normal) normal
 
-            ///以物体坐标中心，旋转顶点
-            float3 rotationDir(float3 localPos)
-            {
-              float4 q = rotate_angle_axis(-90/RadianRatio,float3(1,0,0));//注意，这里的角度参数为弧度
-              float3 newPos =  rotate_vector(localPos,q);
-              return newPos;
+      
+      
 
-            }
+      sampler2D _MainTex;
+      float4 _WHScale;
+      float _Range;
+      uint _VertexCount;
+      uint _VertexSize;
+      uint _Frame;
+      float _Angle;
+      struct Input {
+        float2 uv_MainTex;
+      };
+      struct PosAndDir   {
+        float4 position;
+        float4 velocity;
+        float3 initialVelocity;
+        float4 originalPos;
+        float3 moveTarget;
+        float3 moveDir;
+        float2 indexRC;
+        int picIndex;
+        int bigIndex;
+        float4 uvOffset; 
+        float4 uv2Offset; 
+        int stateCode;
 
-            v2f vert (appdata_full  v,uint instanceID : SV_InstanceID, uint id:SV_VERTEXID)
-            { 
-
-            #if SHADER_TARGET >= 45
-                float4 data = positionBuffer[instanceID].position;
-            #else
-                float4 data = 0;
-            #endif
-                
-               
-                
-                uint index = _VertexCount*_Frame +id;
-               
-                float3 localPos = VertexBuffer[index]; 
-
-                localPos = rotationDir(localPos);
-                float3 worldNormal = rotationDir(v.normal);
-                //if(v.id==0)v.vertex.x +=_Range;
-
-                float3 initialVelocity = positionBuffer[instanceID].initialVelocity;//获取宽高
-                float3 localPosition = v.vertex * data.w;
-                localPosition.x *= _WHScale.x * initialVelocity.x;
-                localPosition.y *= _WHScale.y * initialVelocity.y;
-                float3 worldPosition = data.xyz + localPos;
-              
-             
+      };
 
 
+      #if SHADER_TARGET >= 45
+        StructuredBuffer<PosAndDir> positionBuffer;
+      #endif
 
-                float3 ndotl = saturate(dot(worldNormal, _WorldSpaceLightPos0.xyz));
-                float3 ambient = ShadeSH9(float4(worldNormal, 1.0f));
-                float3 diffuse = (ndotl * _LightColor0.rgb);
-                float3 color = v.color;
+      void rotate2D(inout float2 v, float r)
+      {
+        float s, c;
+        sincos(r, s, c);
+        v = float2(v.x * c - v.y * s, v.x * s + v.y * c);
+      }
 
-               
+      
 
-                v2f o;
-                o.vertex = mul(UNITY_MATRIX_VP, float4(worldPosition, 1.0f));
-                o.uv = v.texcoord;
-				o.index = instanceID;
-                o.ambient = ambient;
-                o.diffuse = diffuse;
-                o.color = color;
-                //TRANSFER_SHADOW(o)
-                return o;
-            }
+      half _Glossiness;
+      half _Metallic;
 
-            fixed4 frag (v2f i) : SV_Target
-            {
-                
-                fixed4 albedo = tex2D(_MainTex, i.uv);
-                fixed shadow = SHADOW_ATTENUATION(i);
-                float3 lighting = i.diffuse * shadow + i.ambient;
-                fixed4 output = fixed4(albedo.rgb * i.color * lighting, albedo.w);
-                return output;
-                
-            }
-            ENDCG
-        }
+      void surf (Input IN, inout SurfaceOutputStandard o) {
+        fixed4 c = tex2D (_MainTex, IN.uv_MainTex);
+        o.Albedo = c.rgb;
+        o.Metallic = _Metallic;
+        o.Smoothness = _Glossiness;
+        o.Alpha = c.a;
+      }
+      
+
+      // vertex-to-fragment interpolation data
+      struct v2f_surf {
+        V2F_SHADOW_CASTER;
+        float3 worldPos : TEXCOORD1;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
+      };
+
+      // vertex shader
+      v2f_surf vert_surf (appdata_full v,uint instanceID : SV_InstanceID, uint id:SV_VERTEXID) {
+
+        if(id==1)v.vertex.x+=_Range;
+
+        
+        
+        float3 worldPos;
+        #if SHADER_TARGET >= 45
+          float4 data = positionBuffer[instanceID].position;
+
+          // float rotation = data.w * data.w * _Time.y * 0.5f;
+          // rotate2D(data.xz, rotation);
+
+          //其他宏用到改变的矩阵
+          unity_ObjectToWorld._11_21_31_41 = float4(data.w, 0, 0, 0);
+          unity_ObjectToWorld._12_22_32_42 = float4(0, data.w, 0, 0);
+          unity_ObjectToWorld._13_23_33_43 = float4(0, 0, data.w, 0);
+          unity_ObjectToWorld._14_24_34_44 = float4(data.xyz, 1);
+          unity_WorldToObject = unity_ObjectToWorld;
+          unity_WorldToObject._14_24_34 *= -1;
+          unity_WorldToObject._11_22_33 = 1.0f / unity_WorldToObject._11_22_33;
+
+          
+          
+          worldPos = data.xyz + v.vertex.xyz *data.w;
+          
+        #endif
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        v2f_surf o;
+        UNITY_INITIALIZE_OUTPUT(v2f_surf,o);
+        UNITY_TRANSFER_INSTANCE_ID(v,o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
+        #if SHADER_TARGET < 45
+          worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+        #endif
+
+        float3 worldNormal = UnityObjectToWorldNormal(v.normal);
+        o.worldPos.xyz = worldPos;
+
+        TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
+        return o;
+      }
+
+      // fragment shader
+      fixed4 frag_surf (v2f_surf IN) : SV_Target {
+        UNITY_SETUP_INSTANCE_ID(IN);
+        // prepare and unpack data
+        Input surfIN;
+        #ifdef FOG_COMBINED_WITH_TSPACE
+          UNITY_EXTRACT_FOG_FROM_TSPACE(IN);
+        #elif defined (FOG_COMBINED_WITH_WORLD_POS)
+          UNITY_EXTRACT_FOG_FROM_WORLD_POS(IN);
+        #else
+          UNITY_EXTRACT_FOG(IN);
+        #endif
+        UNITY_INITIALIZE_OUTPUT(Input,surfIN);
+        surfIN.uv_MainTex.x = 1.0;
+        float3 worldPos = IN.worldPos.xyz;
+        #ifndef USING_DIRECTIONAL_LIGHT
+          fixed3 lightDir = normalize(UnityWorldSpaceLightDir(worldPos));
+        #else
+          fixed3 lightDir = _WorldSpaceLightPos0.xyz;
+        #endif
+        #ifdef UNITY_COMPILER_HLSL
+          SurfaceOutputStandard o = (SurfaceOutputStandard)0;
+        #else
+          SurfaceOutputStandard o;
+        #endif
+        o.Albedo = 0.0;
+        o.Emission = 0.0;
+        o.Alpha = 0.0;
+        o.Occlusion = 1.0;
+        fixed3 normalWorldVertex = fixed3(0,0,1);
+
+        // call surface function
+        surf (surfIN, o);
+        SHADOW_CASTER_FRAGMENT(IN)
+      }
+      ENDCG
+
     }
+  }
+  FallBack "Diffuse"
 }

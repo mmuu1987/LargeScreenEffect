@@ -468,7 +468,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &286227672
 RectTransform:
   m_ObjectHideFlags: 0
@@ -508,7 +508,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!135 &312232051
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -680,7 +680,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &522872089
 RectTransform:
   m_ObjectHideFlags: 0
@@ -771,7 +771,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
+  m_BackGroundColor: {r: 0.1475169, g: 0.27797824, b: 0.6132076, a: 0}
   m_projectionMatrixMode: 1
   m_SensorSize: {x: 36, y: 24}
   m_LensShift: {x: 0, y: 0}
@@ -784,7 +784,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.3
-  far clip plane: 100
+  far clip plane: 350
   field of view: 60
   orthographic: 0
   orthographic size: 5
@@ -811,7 +811,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 534669902}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -1394,13 +1394,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 710748657}
-  m_LocalRotation: {x: 0.35424343, y: -0, z: -0, w: 0.93515325}
+  m_LocalRotation: {x: 0.29278892, y: 0, z: 0, w: 0.9561771}
   m_LocalPosition: {x: 2, y: 12, z: -3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 41.494003, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 34.05, y: 0, z: 0}
 --- !u!1 &979316767
 GameObject:
   m_ObjectHideFlags: 0
@@ -1691,10 +1691,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   InstanceCount: 100000
-  InstanceMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  InstanceMesh: {fileID: 4300000, guid: d31d4e07cf8e0ab46a879263003c70c4, type: 3}
   InstanceMaterial: {fileID: 2100000, guid: b7fc842c8b38fde4a9f0f00a85432ccc, type: 2}
   Type: 9
-  HorizontalColumn: 10
+  HorizontalColumn: 300
   VerticalColumn: 100
   IsCastShadows: 1
   IsReceiveShadows: 1
@@ -1796,8 +1796,10 @@ MonoBehaviour:
   InitName: InitLerp
   ComputeShader: {fileID: 7200000, guid: fea96649eff93ee4fb3167c07f2a973b, type: 3}
   InitTime: 0.2
-  CurMaterial: {fileID: 2100000, guid: e806a0ed624cbba42a5eef67b42cd164, type: 2}
-  RanomPos: {x: 100, y: 100, z: 100}
+  CurMaterial: {fileID: 2100000, guid: 2b142539fdd8d00479d8f2dae28c31ce, type: 2}
+  RanomPos: {x: 500, y: 350, z: 500}
+  TargetPosRight: {fileID: 312232054}
+  ForceRadius: 150
 --- !u!1 &1287846001
 GameObject:
   m_ObjectHideFlags: 0

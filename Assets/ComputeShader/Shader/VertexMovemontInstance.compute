@@ -2,21 +2,193 @@
 #pragma kernel InitLerp
 #define thread_group_size_x 64
 #define thread_group_size_y 1
+#define P 3.141592653
+#define Epsilon    0.0001
+
+
+#include "UnityCG.cginc"
+#include "../GPUParticle.cginc"
+#include "../GPUParticleComputeCommon.cginc"
+#include "../../Common/Shaders/Math.cginc"
+#include "../../Common/Shaders/Random.cginc"
+
+
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
 RWTexture2D<float4> Result;
 
+//着力半径
+float ForceRadius;
+
+float MoveSpeed = 1;
+float dt;
+float4 MoveRange;
+float3 TargetPosRight;
+
+int ScreenWidth;
+int ScreenHeight;
+
+//视矩阵，也就是世界到摄像机的矩阵，由C#传递过来
+float4x4 v;
+//投影矩阵，也就是摄像机到屏幕的矩阵，由C#传递过来
+float4x4 p;
+//视矩阵的逆矩阵，也就是摄像机到世界的矩阵，由C#传递过来
+float4x4 iv;
+//投影矩阵的逆矩阵，也就是屏幕到摄像机的的矩阵，由C#传递过来
+float4x4 ip;
+
+
+//把世界坐标点转换到屏幕坐标，支持相机旋转,得到的数据范围是[0-1]
+//ComputeScreenPos虽然为unityCG.cginc的方法，但是不涉及到矩阵，所以可以应用该方法
+float2 WorldToScreenPos(float3 pos)
+{
+    float4x4 vp = mul(p, v);
+
+    float4 vertex = mul(vp, float4(pos, 1.0));
+
+    float4 screenPos = ComputeScreenPos(vertex);
+
+    screenPos.xy = screenPos.xy / screenPos.w;
+
+    return float2(screenPos.x, screenPos.y);
+}
+
+float rand(in float2 uv)
+{
+    float2 noise = (frac(sin(dot(uv, float2(12.9898, 78.233) * 2.0)) * 43758.5453));
+    return abs(noise.x + noise.y) * 0.5;
+}
+
+float random(float2 st, float n)
+{
+    st = floor(st * n);
+    return frac(sin(dot(st.xy, float2(12.9898, 78.233))) * 43758.5453123);
+}
+
+//根据位置获取随机速度
+float2 GetVelocity(float3 pos, float n = 100)
+{
+    float2 newScreenPos = WorldToScreenPos(pos);
+
+    float v1 = random(float2(newScreenPos.y, newScreenPos.x), n);
+
+    float v2 = random(newScreenPos, n);
+
+    //转换到[-1,1]区间，上面的V1,V2数值范围为[0,1],我们通过-0.5  *2 来转换
+    v1 = (v1 - 0.5) * 2;
+    v2 = (v2 - 0.5) * 2;
+
+    return float2(v1, v2);
+
+}
+
+//前向运动
+void MoveFront(uint3 id : SV_DispatchThreadID)
+{
+    float4 pos = positionBuffer[id.x].position;
+
+    float4 originalPos = positionBuffer[id.x].originalPos;
+    
+    float4 timeTemp = positionBuffer[id.x].uvOffset;
+    
+    float3 moveTarget = positionBuffer[id.x].moveTarget;
+    
+    
+    float3 target = originalPos.xyz + float3(0, 0, MoveSpeed);
+    
+    originalPos.xyz = lerp(originalPos.xyz, target, dt);
+   
+    
+    float2 screenPos = WorldToScreenPos(pos.xyz);
+    
+    screenPos.x = screenPos.x * ScreenWidth;
+    screenPos.y = screenPos.y * ScreenHeight;
+    
+    float2 dir = screenPos - TargetPosRight.xy; //屏幕向量，不是3D向量
+    
+    float2 worldDir = normalize(dir) * 10;//转为屏幕向量尺寸
+    
+    
+    if (timeTemp.y <= timeTemp.x)
+    {
+        timeTemp.y += dt;
+    }
+    else
+    {
+        
+        timeTemp.y = 0;
+        timeTemp.z = 1;//回归值
+    }
+    
+    
+    if (length(dir) < ForceRadius)
+    {
+        if(timeTemp.z>0)
+        {
+            moveTarget = pos.xyz + float3(worldDir.x, worldDir.y, 0);
+        
+            timeTemp.y = 0;
+        
+            timeTemp.z = -1; //标记触发了半径内
+        
+        }
+         
+        pos.xyz = lerp(pos.xyz, moveTarget, dt); //弹出运动
+        
+    }
+    else
+    {
+        if(timeTemp.z>0)
+        {
+            pos.xyz = lerp(pos, originalPos, dt );//常规运动
+            
+        }
+        else
+        {
+            pos.xyz = lerp(pos.xyz, moveTarget, dt);//弹出运动
+            
+        }
+       
+       
+    }
+   
+    
+    
+    if(MoveRange.z<=pos.z)
+    {
+      //超过限定范围就归位
+        float2 v = GetVelocity(pos.xyz);
+        v = v / 2 + 0.5; //将范围约束在0,1
+        //new Vector4(rangeVector2.x - RanomPos.x / 2, rangeVector2.y - RanomPos.y / 2 + heightTest, Zdepth + Random.Range(0, RanomPos.z), 3f);
+        float newx = v.x * MoveRange.x;
+        float newy = v.y * MoveRange.y;
+        
+        float4 temp = float4(newx - MoveRange.x / 2, newy - MoveRange.y/2, 0, pos.w);
+        
+        pos = temp;
+        originalPos = temp;
+        moveTarget = temp.xyz;
+
+    }
+    
+    positionBuffer[id.x].position = pos;
+
+    positionBuffer[id.x].originalPos = originalPos;
+    
+    positionBuffer[id.x].uvOffset = timeTemp;
+    
+    positionBuffer[id.x].moveTarget = moveTarget;
+    
+}
+
 [numthreads(thread_group_size_x, thread_group_size_y, 1)]
 void CSPositionKernel(uint3 id : SV_DispatchThreadID)
 {
-    // TODO: insert actual code here!
-
-    //Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+    MoveFront(id);
+    
 }
 [numthreads(thread_group_size_x, thread_group_size_y, 1)]
 void InitLerp(uint3 id : SV_DispatchThreadID)
 {
-    // TODO: insert actual code here!
-
-    //Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+   
 }
