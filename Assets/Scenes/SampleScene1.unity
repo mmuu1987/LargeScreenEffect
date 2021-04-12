@@ -1694,7 +1694,7 @@ MonoBehaviour:
   InstanceMesh: {fileID: 4300000, guid: d31d4e07cf8e0ab46a879263003c70c4, type: 3}
   InstanceMaterial: {fileID: 2100000, guid: b7fc842c8b38fde4a9f0f00a85432ccc, type: 2}
   Type: 9
-  HorizontalColumn: 300
+  HorizontalColumn: 200
   VerticalColumn: 100
   IsCastShadows: 1
   IsReceiveShadows: 1

@@ -106,7 +106,7 @@ void MoveFront(uint3 id : SV_DispatchThreadID)
     
     float2 dir = screenPos - TargetPosRight.xy; //屏幕向量，不是3D向量
     
-    float2 worldDir = normalize(dir) * 10;//转为屏幕向量尺寸
+    float2 worldDir = normalize(dir) * 25;//转为屏幕向量尺寸
     
     
     if (timeTemp.y <= timeTemp.x)
