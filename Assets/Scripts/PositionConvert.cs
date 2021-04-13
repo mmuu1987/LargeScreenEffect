@@ -41,8 +41,9 @@ public class PositionConvert : MonoBehaviour
     /// 半径
     /// </summary>
     public float Radius= 1f;
-
+    private WaitForEndOfFrame wfef;
     public Vector3 SpineMidpos;
+    private Coroutine _coroutine;
     private void Awake()
     {
         if(Instance!=null)throw new UnityException("已经有了一个单例了");
@@ -52,7 +53,7 @@ public class PositionConvert : MonoBehaviour
     void Start()
     {
         KinectManager manager = KinectManager.Instance;
-
+        wfef = new WaitForEndOfFrame();
 
         if (manager && manager.IsInitialized())
         {
@@ -182,7 +183,7 @@ public class PositionConvert : MonoBehaviour
                 _isOpenHand = false;
 
                 if (HandEvent != null) HandEvent(false);
-                Common.StateCode = 1;
+               
             }
            
         }
@@ -193,12 +194,12 @@ public class PositionConvert : MonoBehaviour
                // Debug.LogError("双手张开");
                 _isOpenHand = true;
                 if (HandEvent != null) HandEvent(true);
-                Common.StateCode = 2;
+                
             }
            
         }
     }
-
+   
 
     public Vector3 GetScreenPos(string joint)
     {

@@ -78,7 +78,7 @@ public class FluidMotion : MotionInputMoveBase
     /// </summary>
     public Dictionary<int, float> GenerateRatios = new Dictionary<int, float>();
 
-    public PositionConvert PositionConvert;
+    
 
     protected override void Init()
     {
@@ -335,7 +335,7 @@ public class FluidMotion : MotionInputMoveBase
 
 
         
-        ComputeShader.SetVectorArray("bonePos", PositionConvert.GetPosArray());
+        ComputeShader.SetVectorArray("bonePos", PositionConvert.Instance.GetPosArray());
         //根据不同的交互类型过滤不
 
 

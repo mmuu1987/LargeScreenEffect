@@ -86,7 +86,7 @@ public class PictureHandle : MonoBehaviour
     }
     IEnumerator Wait()
     {
-        Debug.Log(1);
+       // Debug.Log(1);
         List<string> paths = GetAllPath("flower");
 
 

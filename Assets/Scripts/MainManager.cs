@@ -33,14 +33,14 @@ public class MainManager : MonoBehaviour
 #if UNITY_EDITOR
     private void OnGUI()
     {
-        if (GUI.Button(new Rect(0f, 0f, 100f, 100f), "video"))
-        {
-            _Machine.ChangeState(DicUI[UIState.PlayVideoState]);
-        }
-        if (GUI.Button(new Rect(100f, 0f, 100f, 100f), "StandBy"))
-        {
-            _Machine.ChangeState(DicUI[UIState.StandBy]);
-        }
+    //    if (GUI.Button(new Rect(0f, 0f, 100f, 100f), "video"))
+    //    {
+    //        _Machine.ChangeState(DicUI[UIState.PlayVideoState]);
+    //    }
+    //    if (GUI.Button(new Rect(100f, 0f, 100f, 100f), "StandBy"))
+    //    {
+    //        _Machine.ChangeState(DicUI[UIState.StandBy]);
+    //    }
     }
 #endif
 

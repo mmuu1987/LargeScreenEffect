@@ -464,7 +464,7 @@ void CSPositionKernel(uint3 id : SV_DispatchThreadID)
 		gatherState(id);
 
 	}
-	else if (StateCode == 2)//聚集状态
+	else if (StateCode == 2)//散开状态
 	{
 		diffuseState(id);
 

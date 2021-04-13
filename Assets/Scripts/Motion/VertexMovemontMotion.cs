@@ -30,16 +30,23 @@ public class VertexMovemontMotion : MotionInputMoveBase
 
     public Transform TargetPosRight;
 
+    private WaitForSeconds wfs;
+    private WaitForEndOfFrame wfef;
+    private Coroutine _coroutine;
     /// <summary>
     /// 点击作用的半径
     /// </summary>
     public float ForceRadius = 2f;
     protected override void Init()
     {
+        //float temp = 3;
+        //float value = (temp /= 5) * temp * temp;
+        //Debug.Log("value is " +value+ "  tmep is" + temp);
         base.Init();
-
+        Common.Init();
         MotionType = MotionType.VertexMovement;
-
+        wfs = new WaitForSeconds(3);//第二种状态等待三秒后如果没有操作就执行运动种类变换
+        wfef = new WaitForEndOfFrame();
         LoadAnimationData();
 
         Debug.Log("screen width is " + Screen.width + "  screen height is " + Screen.height);
@@ -85,13 +92,55 @@ public class VertexMovemontMotion : MotionInputMoveBase
         //因不能从unityCG.cginc里拿到屏幕参数，所以从这里传入进去
         ComputeShader.SetInt("ScreenWidth", Screen.width);
         ComputeShader.SetInt("ScreenHeight", Screen.height);
-       
+        ComputeShader.SetInt("StateCode", 0);
+
         ComputeShader.SetFloat("dt", Time.deltaTime);
         ComputeShader.SetFloat("MoveSpeed", 2f);
         ComputeShader.SetVector("MoveRange", RanomPos);
 
+        PositionConvert.Instance.HandEvent += HandEvent;
+
     }
 
+    private void HandEvent(bool obj)
+    {
+        if (obj)
+        {
+            
+            Common.StateCode = 2;
+            if (_coroutine != null) StopCoroutine(_coroutine);
+            _coroutine = StartCoroutine(WaitChangeCategory(500));
+
+        }
+        else
+        {
+            Common.StateCode = 1;
+           
+        }
+    }
+    /// <summary>
+    /// 等待一定的帧数变运动的种类
+    /// </summary>
+    /// <returns></returns>
+    private IEnumerator WaitChangeCategory(int count)
+    {
+        int tempCount = 0;
+        while (true)
+        {
+            yield return wfef;
+            Debug.Log(" stateCode IS " + Common.StateCode);
+            if (Common.StateCode != 2) yield break;//如果状态改变，则停止计算
+
+            tempCount++;
+            if (tempCount >= count)
+            {
+                Common.SetCategory(0);
+                yield break;
+            }
+        }
+
+
+    }
     private void SetData(PosAndDir[] data)
     {
         float temp = 0f;
@@ -122,13 +171,18 @@ public class VertexMovemontMotion : MotionInputMoveBase
             _posDirs[i].moveDir = Vector3.zero;
             _posDirs[i].originalPos = value;
             _posDirs[i].stateCode = 0;//状态码
-            //存储两根骨骼数据的数组索引
+            
            
+            //第一个参数为第一状态的布尔值，用来存储布尔逻辑
+            _posDirs[i].uv2Offset = new Vector4(1,0,0,0);
 
-            _posDirs[i].indexRC = Vector2.zero;
+            //存储两根骨骼数据的数组索引
+            List<int> indexs = Common.BonePos[Random.Range(0, Common.BonePos.Count)];
+            _posDirs[i].indexRC = new Vector2(indexs[0], indexs[1]);
             _posDirs[i].velocity = new Vector3(Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f), 0f);
-            //第一个参数是时间间隔，第二个参数在computeshader那边保存时间缓存，第三个参数代表第一状态的布尔值，-1=false,1=true
-            _posDirs[i].uvOffset = new Vector4(Random.Range(3f, 10f), 0f, 1, Random.Range(0f, 1f));
+
+            //第一个参数是时间间隔，第二个参数在computeshader那边保存时间缓存,第三个参数为速度,第四个参数为第二状态的时间间隔，第三状态的随机值
+            _posDirs[i].uvOffset = new Vector4(Random.Range(3f, 10f), 0f, Random.Range(0.05f, 0.1f), Random.Range(0f, 1f));
 
 
         }
@@ -182,7 +236,10 @@ public class VertexMovemontMotion : MotionInputMoveBase
 
         Common.Filter((b =>
         {
-            if (b) ComputeShader.SetInt("StateCode", Common.StateCode);
+            if (b)
+            {
+                ComputeShader.SetInt("StateCode", Common.StateCode);
+            }
         }));
 
 
@@ -190,12 +247,58 @@ public class VertexMovemontMotion : MotionInputMoveBase
         ComputeShader.SetFloat("ForceRadius", ForceRadius);
         ComputeShader.SetFloat("Seed", Random.Range(0f, 1f));
         ComputeShader.SetFloat("dt", Time.deltaTime);
+        ComputeShader.SetVectorArray("bonePos", PositionConvert.Instance.GetPosArray());
 
+        Vector3 screenPos =  Camera.main.WorldToScreenPoint(GetWorldPos());
 
-       Vector3 screenPos =  Camera.main.WorldToScreenPoint(TargetPosRight.position);
-        ComputeShader.SetVector("TargetPosRight", screenPos);
+       
+        if (Common.StateCode == 1 || Common.StateCode == 2)//聚集和散开状态需要的是世界空间位置
+        {
+           ComputeShader.SetVector("TargetPosRight", new Vector4(0f,0f,30.5f,0f));//new Vector4(0f,0f,30.5f,0f)固定集中在中间
+           
+        }
+        else if(Common.StateCode==0)//自由向前运动是需要的是屏幕的位置
+        {
+           ComputeShader.SetVector("TargetPosRight", screenPos);
+        }
+       
         base.Dispatch(dispatchID, system);
     }
+
+   
+
+    private Vector3 GetWorldPos()
+    {
+        Vector3 screenPos = PositionConvert.Instance.GetScreenPos("HandRight");
+
+        Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 30.5f));
+
+        return worldPos;
+
+
+    }
+
+    public override void ExitMotion()
+    {
+        base.ExitMotion();
+        PositionConvert.Instance.HandEvent -= HandEvent;
+    }
+
+#if UNITY_EDITOR
+    private void OnGUI()
+    {
+        if (GUI.Button(new Rect(0f, 0f, 100f, 100f), "gatherState"))
+        {
+            Common.Category = 1;
+            Common.StateCode = 1;
+        }
+        if (GUI.Button(new Rect(100f, 0f, 100f, 100f), "diffuseState"))
+        {
+            Common.Category = 1;
+            Common.StateCode = 2;
+        }
+    }
+#endif
 }
 [Serializable]
 public class MeshData

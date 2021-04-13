@@ -87,10 +87,12 @@ public static class Common
         BonePos.Add(19, new List<int>() { 20, 2 });
         
     }
+
     /// <summary>
     /// 根据种类所包含的状态码，过滤掉不属于该种类的状态码
     /// </summary>
     /// <param name="stateCode">状态码</param>
+    /// <param name="action"></param>
     /// <returns></returns>
     public static void Filter(Action<bool> action)
     {
@@ -115,11 +117,24 @@ public static class Common
 
         if (!CategoryDic.ContainsKey(Category))
         {
-            Category = 0;
+            Category = 0;//归为初始状态
            
         }
        
         StateCode = CategoryDic[Category][0];//改变一个种类就要设置这个种类的初始状态码
+    }
+
+    /// <summary>
+    /// 改变运动的种类
+    /// </summary>
+    /// <param name="category"></param>
+    public static void SetCategory(int category)
+    {
+        if (CategoryDic.ContainsKey(category))
+        {
+            Category = category;
+            StateCode = CategoryDic[category][0];//改变种类后并把改种类归为第一种状态
+        }
     }
     public static float GetCross(Vector2 p1, Vector2 p2, Vector2 p)
     {

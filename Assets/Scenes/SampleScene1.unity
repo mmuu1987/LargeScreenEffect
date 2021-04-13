@@ -680,7 +680,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &522872089
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1259,7 +1259,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!135 &699379826
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -1767,7 +1767,6 @@ MonoBehaviour:
   ScaleImageComputeShader: {fileID: 7200000, guid: d7d29f0b40895034f87ad3f2468daa69,
     type: 3}
   Vector4: {x: 0, y: 0, z: 0, w: 0}
-  PositionConvert: {fileID: 17942848}
 --- !u!114 &1104251577
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -13,9 +13,6 @@
 #include "../../Common/Shaders/Random.cginc"
 
 
-// Create a RenderTexture with enableRandomWrite flag and set it
-// with cs.SetTexture
-RWTexture2D<float4> Result;
 
 //着力半径
 float ForceRadius;
@@ -27,6 +24,9 @@ float3 TargetPosRight;
 
 int ScreenWidth;
 int ScreenHeight;
+int StateCode = 0;
+
+float4 bonePos[25];
 
 //视矩阵，也就是世界到摄像机的矩阵，由C#传递过来
 float4x4 v;
@@ -93,6 +93,8 @@ void MoveFront(uint3 id : SV_DispatchThreadID)
     
     float3 moveTarget = positionBuffer[id.x].moveTarget;
     
+    float4 uv2Offset = positionBuffer[id.x].uv2Offset;
+    
     
     float3 target = originalPos.xyz + float3(0, 0, MoveSpeed);
     
@@ -117,19 +119,19 @@ void MoveFront(uint3 id : SV_DispatchThreadID)
     {
         
         timeTemp.y = 0;
-        timeTemp.z = 1;//回归值
+        uv2Offset.x = 1; //回归值
     }
     
     
     if (length(dir) < ForceRadius)
     {
-        if(timeTemp.z>0)
+        if (uv2Offset.x > 0)
         {
             moveTarget = pos.xyz + float3(worldDir.x, worldDir.y, 0);
         
             timeTemp.y = 0;
         
-            timeTemp.z = -1; //标记触发了半径内
+            uv2Offset.x = -1; //标记触发了半径内
         
         }
          
@@ -138,7 +140,7 @@ void MoveFront(uint3 id : SV_DispatchThreadID)
     }
     else
     {
-        if(timeTemp.z>0)
+        if (uv2Offset.x > 0)
         {
             pos.xyz = lerp(pos, originalPos, dt );//常规运动
             
@@ -179,12 +181,220 @@ void MoveFront(uint3 id : SV_DispatchThreadID)
     
     positionBuffer[id.x].moveTarget = moveTarget;
     
+    positionBuffer[id.x].uv2Offset = uv2Offset;
+    
 }
+//聚集状态
+void gatherState(uint3 id : SV_DispatchThreadID)
+{
+	
+    int stateCode = positionBuffer[id.x].stateCode;
+	
+    float4 pos = positionBuffer[id.x].position;
+
+    float4 originalPos = positionBuffer[id.x].originalPos;
+	
+    float3 moveDir = positionBuffer[id.x].moveDir;
+	
+    float4 timeTemp = positionBuffer[id.x].uvOffset;
+	
+    float v = 0; //插值
+	
+    if (stateCode != StateCode)//如果是从其他状态切换到该状态
+    {
+        float2 v = GetVelocity(originalPos);
+        moveDir.x = v.x / 2 + 0.5;
+        if (moveDir.x <= 0.1)
+        {
+            moveDir.x = 0.1;
+
+        }
+        stateCode = StateCode;
+        timeTemp.y = 0;
+
+    }
+	
+	
+	///////////间隔到一定时间才移动
+    if (timeTemp.y <= timeTemp.w)
+    {
+        timeTemp.y += dt;
+        v = 0;
+
+    }
+    else
+    {
+        v = moveDir.x;
+    }
+	/////////间隔到一定时间才移动
+	
+	
+	
+    pos.xyz = CubicEaseOut(pos.xyz, TargetPosRight.xyz, dt * v * 10);
+	
+    positionBuffer[id.x].position = pos;
+    positionBuffer[id.x].moveDir = moveDir;
+	
+    positionBuffer[id.x].stateCode = stateCode;
+	
+    positionBuffer[id.x].uvOffset = timeTemp;
+}
+//散开状态
+void diffuseState(uint3 id : SV_DispatchThreadID)
+{
+    int stateCode = positionBuffer[id.x].stateCode;
+	
+    float4 pos = positionBuffer[id.x].position;
+
+    float4 originalPos = positionBuffer[id.x].originalPos;
+	
+    float3 moveDir = positionBuffer[id.x].moveDir;
+	
+    float4 timeTemp = positionBuffer[id.x].uvOffset;
+	
+    float v = 0; //插值
+	
+    if (stateCode != StateCode)//如果是从其他状态切换到该状态
+    {
+        float2 v = GetVelocity(originalPos);
+        moveDir.x = v.x / 2 + 0.5;
+        if (moveDir.x <= 0.3)
+        {
+            moveDir.x = 0.3;
+
+        }
+        stateCode = StateCode;
+        timeTemp.y = 0;
+
+    }
+	
+	
+	///////////间隔到一定时间才移动
+    if (timeTemp.y <= timeTemp.w)
+    {
+        timeTemp.y += dt;
+        v = 0;
+
+    }
+    else
+    {
+        v = moveDir.x;
+    }
+	/////////间隔到一定时间才移动
+	
+    pos.xyz = CubicEaseIn(pos.xyz, originalPos.xyz, dt * v * 20);
+	
+    positionBuffer[id.x].position = pos;
+    positionBuffer[id.x].moveDir = moveDir;
+	
+    positionBuffer[id.x].stateCode = stateCode;
+	
+    positionBuffer[id.x].uvOffset = timeTemp;
+}
+//粒子图改变成骨架形状
+void ChangeSkeleton(uint3 id : SV_DispatchThreadID)
+{
+    float4 pos = positionBuffer[id.x].position;
+
+    float4 originalPos = positionBuffer[id.x].originalPos;
+
+    float3 moveDir = positionBuffer[id.x].moveDir;
+	
+    float2 indexRC = positionBuffer[id.x].indexRC;
+	
+    float4 timeTemp = positionBuffer[id.x].uvOffset;
+	
+    float4 velocity = positionBuffer[id.x].velocity;
+	
+    int stateCode = positionBuffer[id.x].stateCode;
+	
+	
+    float3 p1 = bonePos[indexRC.x]; //得到第一个骨骼点位置
+    //p1 = ScreenToWorldMatrix(float3(p1.x, p1.y, 30.5));
+	
+    float3 p2 = bonePos[indexRC.y]; //得到第二个骨骼点位置
+   // p2 = ScreenToWorldMatrix(float3(p2.x, p2.y, 30.5));
+	
+	
+	
+	
+    float _timeScale = 0.1; //_timeScale 为时间缩放系数
+    float _width = 4; //width为宽度系数
+    float _speed = 20; //_speed为速度系数
+	
+	
+	
+    if (stateCode != StateCode)//如果是从其他状态切换到该状态
+    {
+        float2 v = GetVelocity(originalPos);
+        moveDir.x = v.x / 2 + 0.5;
+        if (moveDir.x <= 0.1)
+        {
+            moveDir.x = 0.1;
+
+        }
+        stateCode = StateCode;
+        timeTemp.y = 0;
+    }
+	
+    if (timeTemp.y <= timeTemp.x * _timeScale)
+    {
+        timeTemp.y += dt;
+    }
+    else
+    {
+       
+        float2 velocityTemp = GetVelocity(pos.xyz);
+        velocityTemp = normalize(velocityTemp) * timeTemp.z * _width * timeTemp.w; //timeTemp.w值为随机数，范围0-1
+        timeTemp.y = 0;
+        velocity.xyz = float3(velocityTemp.xy, timeTemp.w);//timTemp.w*10 为随机Z的值
+    }
+	
+	
+    float3 p3 = lerp(p1, p2, timeTemp.w);//取得p1-p2 段之间随机的一个值
+	
+    p3 = p3 + velocity.xyz;
+	
+    pos.xyz = lerp(pos.xyz, p3, dt * _speed * (0.1 + timeTemp.w)); //0.1+timeTemp.w为随机速度，加上0.1不至于速度太慢
+	
+    positionBuffer[id.x].position = pos;
+    positionBuffer[id.x].moveDir = moveDir;
+	
+    positionBuffer[id.x].uvOffset = timeTemp;
+    
+    positionBuffer[id.x].stateCode = stateCode;
+	
+    positionBuffer[id.x].velocity = velocity;
+	
+	
+}
+
 
 [numthreads(thread_group_size_x, thread_group_size_y, 1)]
 void CSPositionKernel(uint3 id : SV_DispatchThreadID)
 {
-    MoveFront(id);
+    int stateCode = positionBuffer[id.x].stateCode;
+    
+    if (StateCode == 0)//为程序启动的初始状态
+    {
+        MoveFront(id);
+    }
+    else if (StateCode == 1)//聚集状态  
+    {
+        gatherState(id);
+
+    }
+    else if (StateCode == 2)//散开状态
+    {
+        diffuseState(id);
+
+    }
+    else if (StateCode == 3)//跟随人性骨骼状态
+    {
+        ChangeSkeleton(id);
+
+    }
+   
     
 }
 [numthreads(thread_group_size_x, thread_group_size_y, 1)]

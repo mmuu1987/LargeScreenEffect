@@ -240,8 +240,8 @@ public class TextureInstanced : MonoBehaviour, IDragHandler, IEndDragHandler
         InstanceCount = HorizontalColumn * VerticalColumn;
         CurMaterial = InstanceMaterial;
 
-      yield return StartCoroutine( PictureHandle.Instance.HandlerPicture());
-
+       yield return StartCoroutine( PictureHandle.Instance.HandlerPicture());
+        //yield return null;
         HandleTextureArry(PictureHandle.Instance.TexArr);
        
         // PictureHandle.Instance.DestroyTexture();//贴图加载到GPU那边后这边内存就清理掉
