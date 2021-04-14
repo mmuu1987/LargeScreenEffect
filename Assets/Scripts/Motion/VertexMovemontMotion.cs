@@ -30,22 +30,29 @@ public class VertexMovemontMotion : MotionInputMoveBase
 
     public Transform TargetPosRight;
 
-    private WaitForSeconds wfs;
+    
     private WaitForEndOfFrame wfef;
     private Coroutine _coroutine;
     /// <summary>
     /// 点击作用的半径
     /// </summary>
     public float ForceRadius = 2f;
+
+    public RectTransform GUICursor;
+
+    
     protected override void Init()
     {
         //float temp = 3;
         //float value = (temp /= 5) * temp * temp;
         //Debug.Log("value is " +value+ "  tmep is" + temp);
+
+        if (IsInitEnd) return;
+
         base.Init();
         Common.Init();
         MotionType = MotionType.VertexMovement;
-        wfs = new WaitForSeconds(3);//第二种状态等待三秒后如果没有操作就执行运动种类变换
+       
         wfef = new WaitForEndOfFrame();
         LoadAnimationData();
 
@@ -100,6 +107,13 @@ public class VertexMovemontMotion : MotionInputMoveBase
 
         PositionConvert.Instance.HandEvent += HandEvent;
 
+       
+    }
+
+    public void ExternalInit()
+    {
+        Init();
+        IsInitEnd = true;
     }
 
     private void HandEvent(bool obj)
@@ -128,7 +142,7 @@ public class VertexMovemontMotion : MotionInputMoveBase
         while (true)
         {
             yield return wfef;
-            Debug.Log(" stateCode IS " + Common.StateCode);
+            //Debug.Log(" stateCode IS " + Common.StateCode);
             if (Common.StateCode != 2) yield break;//如果状态改变，则停止计算
 
             tempCount++;
@@ -159,7 +173,7 @@ public class VertexMovemontMotion : MotionInputMoveBase
         {
             int picIndex = 0;
 
-            _posDirs[i].picIndex = i%TextureInstanced.Instance.TexArr.depth;
+            //_posDirs[i].picIndex = i%TextureInstanced.Instance.TexArr.depth;
 
             _posDirs[i].bigIndex = 0;//大类ID
             _posDirs[i].initialVelocity = new Vector3(1, 1, 0f);//填充真实宽高
@@ -173,9 +187,10 @@ public class VertexMovemontMotion : MotionInputMoveBase
             _posDirs[i].stateCode = 0;//状态码
             
            
-            //第一个参数为第一状态的布尔值，用来存储布尔逻辑
-            _posDirs[i].uv2Offset = new Vector4(1,0,0,0);
-
+            //第一个参数为第一状态的布尔值，用来存储布尔逻辑,第二个为顶点旋转的概率，只有旋转，跟不旋转，同样是布尔值，第三个是旋转的速度,第四个参数同样为布尔值，用在指示是否旋转
+            //在computeshader里赋值
+            _posDirs[i].uv2Offset = new Vector4(1, GetProbability(0.15f), Random.Range(0,2f),1);
+            
             //存储两根骨骼数据的数组索引
             List<int> indexs = Common.BonePos[Random.Range(0, Common.BonePos.Count)];
             _posDirs[i].indexRC = new Vector2(indexs[0], indexs[1]);
@@ -188,6 +203,24 @@ public class VertexMovemontMotion : MotionInputMoveBase
         }
     }
 
+    /// <summary>
+    /// 计算出多少概率获得true
+    /// </summary>
+    /// <param name="arg">大于0小于1的参数</param>
+    /// <returns>0为false,1为true</returns>
+    private int GetProbability(float arg)
+    {
+        if (arg < 1f && arg > 0f)
+        {
+            float v = Random.Range(0f, 1f);
+
+            if (v <= arg) return 1;
+            return 0;
+        }
+        if (arg > 1) return 1; 
+        return 0;
+        
+    }
     /// <summary>
     /// 导入动画数据
     /// </summary>
@@ -259,7 +292,7 @@ public class VertexMovemontMotion : MotionInputMoveBase
         }
         else if(Common.StateCode==0)//自由向前运动是需要的是屏幕的位置
         {
-           ComputeShader.SetVector("TargetPosRight", screenPos);
+           ComputeShader.SetVector("TargetPosRight", GUICursor.anchoredPosition);
         }
        
         base.Dispatch(dispatchID, system);

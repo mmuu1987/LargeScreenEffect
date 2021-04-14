@@ -3896,7 +3896,7 @@ public class KinectManager : MonoBehaviour
 					return;
 				}
 				
-				Debug.Log("Adding user " + uidIndex + ", ID: " + userId + ", Body: " + bodyIndex);
+				//Debug.Log("Adding user " + uidIndex + ", ID: " + userId + ", Body: " + bodyIndex);
 
 				dictUserIdToIndex[userId] = bodyIndex;
 				dictUserIdToTime[userId] = Time.time;
@@ -3946,6 +3946,8 @@ public class KinectManager : MonoBehaviour
 				}
 				
 				ResetFilters();
+
+                if (AddingUserEvent != null) AddingUserEvent(userId);
 			}
 		}
     }
@@ -3957,21 +3959,24 @@ public class KinectManager : MonoBehaviour
 		int uidIndex = Array.IndexOf(aUserIndexIds, userId);
 		Debug.Log("Removing user " + uidIndex + ", ID: " + userId + ", Body: " + dictUserIdToIndex[userId]);
 
-//		// reset the respective avatar controllers
-//		for(int i = 0; i < avatarControllers.Count; i++)
-//		{
-//			AvatarController avatar = avatarControllers[i];
-//
-//			//if(avatar && avatar.playerIndex >= uidIndex && avatar.playerIndex < alUserIds.Count)
-//			if(avatar && avatar.playerId == userId)
-//			{
-//				avatar.ResetToInitialPosition();
-//				avatar.playerId = 0;
-//			}
-//		}
+
+        if (RemoveUserEvent != null) RemoveUserEvent(userId);
+
+		//		// reset the respective avatar controllers
+		//		for(int i = 0; i < avatarControllers.Count; i++)
+		//		{
+		//			AvatarController avatar = avatarControllers[i];
+		//
+		//			//if(avatar && avatar.playerIndex >= uidIndex && avatar.playerIndex < alUserIds.Count)
+		//			if(avatar && avatar.playerId == userId)
+		//			{
+		//				avatar.ResetToInitialPosition();
+		//				avatar.playerId = 0;
+		//			}
+		//		}
 
 		// notify all gesture listeners for losing this user
-		foreach(KinectGestures.GestureListenerInterface listener in gestureListeners)
+		foreach (KinectGestures.GestureListenerInterface listener in gestureListeners)
 		{
 			if(listener != null)
 			{
@@ -4747,6 +4752,14 @@ public class KinectManager : MonoBehaviour
 			}
 		}
 	}
+
+
+    /// <summary>
+    /// kinect识别到用户的事件 long 为用户ID
+    /// </summary>
+    public event Action<long> AddingUserEvent;
+
+    public event Action<long> RemoveUserEvent;
 
 }
 

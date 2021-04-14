@@ -127,18 +127,6 @@ public class PositionConvert : MonoBehaviour
                 }
 
             }
-
-            //if (ScreenPosDictionary.ContainsKey("HandLeft"))
-            //{
-            //    Vector3 temp = ScreenPosDictionary["HandLeft"];
-            //    HandLeft.rectTransform.anchoredPosition = new Vector2(1920-temp.x, temp.y);
-            //}
-
-            //if (ScreenPosDictionary.ContainsKey("HandRight"))
-            //{
-            //    Vector3 temp = ScreenPosDictionary["HandRight"];
-            //    HandRight.rectTransform.anchoredPosition = new Vector2(1920 - temp.x, temp.y);
-            //}
         }
 
         CheckHand();

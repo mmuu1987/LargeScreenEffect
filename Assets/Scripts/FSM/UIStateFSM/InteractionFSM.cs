@@ -2,22 +2,19 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class StandbyFSM : UIStateFSM
+public class InteractionFSM : UIStateFSM
 {
 
-    private FluidMotion _fluidMotion;
-    public StandbyFSM(Transform go) : base(go)
+    
+    public InteractionFSM(Transform go) : base(go)
     {
-        _fluidMotion = go.GetComponent<FluidMotion>();
-
-
+        TextureInstanced.Instance.VertexMovemontMotion.ExternalInit();
+        
     }
 
     public override void Enter()
     {
         TextureInstanced.Instance.Type = MotionType.VertexMovement;
-        KinectManager.Instance.ClearKinectUsers();
-        KinectManager.Instance.maxTrackedUsers = 1;
         base.Enter();
         
     }
@@ -27,7 +24,7 @@ public class StandbyFSM : UIStateFSM
         base.Exit();
         TextureInstanced.Instance.Type = MotionType.None;
         KinectManager.Instance.ClearKinectUsers();
-        KinectManager.Instance.maxTrackedUsers = 0;
+       
 
     }
 }

@@ -61,6 +61,7 @@ public static class Common
 
     public static void Init()
     {
+        Debug.Log("init");
         CategoryDic.Add(0, new List<int> { 0 });
         CategoryDic.Add(1, new List<int> { 2, 1 });
         CategoryDic.Add(2, new List<int> { 3 });

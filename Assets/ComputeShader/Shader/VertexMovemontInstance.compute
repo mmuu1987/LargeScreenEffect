@@ -95,6 +95,9 @@ void MoveFront(uint3 id : SV_DispatchThreadID)
     
     float4 uv2Offset = positionBuffer[id.x].uv2Offset;
     
+    int stateCode = positionBuffer[id.x].stateCode;
+    
+    
     
     float3 target = originalPos.xyz + float3(0, 0, MoveSpeed);
     
@@ -110,6 +113,15 @@ void MoveFront(uint3 id : SV_DispatchThreadID)
     
     float2 worldDir = normalize(dir) * 25;//转为屏幕向量尺寸
     
+    
+    
+    if (stateCode != StateCode)//如果是从其他状态切换到该状态
+    {
+        stateCode = StateCode;
+        timeTemp.y = 0;
+        uv2Offset.w = 1;//旋转开关=>开
+
+    }
     
     if (timeTemp.y <= timeTemp.x)
     {
@@ -183,6 +195,8 @@ void MoveFront(uint3 id : SV_DispatchThreadID)
     
     positionBuffer[id.x].uv2Offset = uv2Offset;
     
+    positionBuffer[id.x].stateCode = stateCode;
+    
 }
 //聚集状态
 void gatherState(uint3 id : SV_DispatchThreadID)
@@ -197,6 +211,8 @@ void gatherState(uint3 id : SV_DispatchThreadID)
     float3 moveDir = positionBuffer[id.x].moveDir;
 	
     float4 timeTemp = positionBuffer[id.x].uvOffset;
+    
+    float4 uv2Offset = positionBuffer[id.x].uv2Offset;
 	
     float v = 0; //插值
 	
@@ -211,6 +227,7 @@ void gatherState(uint3 id : SV_DispatchThreadID)
         }
         stateCode = StateCode;
         timeTemp.y = 0;
+        uv2Offset.w = 0; //旋转开关=>关
 
     }
 	
@@ -238,6 +255,8 @@ void gatherState(uint3 id : SV_DispatchThreadID)
     positionBuffer[id.x].stateCode = stateCode;
 	
     positionBuffer[id.x].uvOffset = timeTemp;
+    
+    positionBuffer[id.x].uv2Offset = uv2Offset;
 }
 //散开状态
 void diffuseState(uint3 id : SV_DispatchThreadID)
@@ -251,6 +270,8 @@ void diffuseState(uint3 id : SV_DispatchThreadID)
     float3 moveDir = positionBuffer[id.x].moveDir;
 	
     float4 timeTemp = positionBuffer[id.x].uvOffset;
+    
+    float4 uv2Offset =positionBuffer[id.x]. uv2Offset;
 	
     float v = 0; //插值
 	
@@ -265,6 +286,7 @@ void diffuseState(uint3 id : SV_DispatchThreadID)
         }
         stateCode = StateCode;
         timeTemp.y = 0;
+        uv2Offset.w = 1;//旋转开关=>开
 
     }
 	
@@ -290,6 +312,8 @@ void diffuseState(uint3 id : SV_DispatchThreadID)
     positionBuffer[id.x].stateCode = stateCode;
 	
     positionBuffer[id.x].uvOffset = timeTemp;
+    
+    positionBuffer[id.x].uv2Offset = uv2Offset;
 }
 //粒子图改变成骨架形状
 void ChangeSkeleton(uint3 id : SV_DispatchThreadID)

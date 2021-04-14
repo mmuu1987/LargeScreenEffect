@@ -59,7 +59,7 @@ public class PictureHandle : MonoBehaviour
 
     public IEnumerator HandlerPicture()
     {
-        Debug.Log(1);
+       // Debug.Log(1);
 
         List<string> paths = GetAllPath("flower");
 

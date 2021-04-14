@@ -23,8 +23,8 @@ public class MotionBase : MonoBehaviour
     /// </summary>
     public float InitTime = 0.2f;
 
-   
 
+    protected bool IsInitEnd = false;
     /// <summary>
     /// 屏幕宽
     /// </summary>

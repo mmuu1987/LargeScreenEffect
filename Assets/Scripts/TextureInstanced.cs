@@ -222,7 +222,7 @@ public class TextureInstanced : MonoBehaviour, IDragHandler, IEndDragHandler
 
     private void Awake()
     {
-        Debug.Log(this.name);
+        //Debug.Log(this.name);
         if (Instance != null) throw new UnityException("已经有单例了，不能重复赋值");
 
         Instance = this;
@@ -230,8 +230,20 @@ public class TextureInstanced : MonoBehaviour, IDragHandler, IEndDragHandler
     }
 
     
-    IEnumerator Start()
+    void  Start()
     {
+
+       // StartCoroutine(Wait());
+    }
+
+    /// <summary>
+    /// 等待初始化
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerator Wait()
+    {
+        if (_isInit) yield break;
+
         Width = Screen.width;
         Height = Screen.height;
 
@@ -240,10 +252,10 @@ public class TextureInstanced : MonoBehaviour, IDragHandler, IEndDragHandler
         InstanceCount = HorizontalColumn * VerticalColumn;
         CurMaterial = InstanceMaterial;
 
-       yield return StartCoroutine( PictureHandle.Instance.HandlerPicture());
-        //yield return null;
-        HandleTextureArry(PictureHandle.Instance.TexArr);
-       
+        // yield return StartCoroutine( PictureHandle.Instance.HandlerPicture());
+        yield return null;
+        //HandleTextureArry(PictureHandle.Instance.TexArr);
+
         // PictureHandle.Instance.DestroyTexture();//贴图加载到GPU那边后这边内存就清理掉
 
         argsBuffer = new ComputeBuffer(5, sizeof(uint), ComputeBufferType.IndirectArguments);
@@ -251,8 +263,6 @@ public class TextureInstanced : MonoBehaviour, IDragHandler, IEndDragHandler
         CreateBuffers();
 
         _isInit = true;
-        //StartCoroutine(WaitEnd());
-        // StartCoroutine(LoadVideo(path));
     }
 
 
@@ -410,11 +420,11 @@ public class TextureInstanced : MonoBehaviour, IDragHandler, IEndDragHandler
         PosAndDir[] posDirs = new PosAndDir[InstanceCount];
 
 
-        for (int i = 0; i < InstanceCount; i++)
-        {
-            posDirs[i].position = Vector4.one;
-            posDirs[i].picIndex = i % TexArr.depth;
-        }
+        //for (int i = 0; i < InstanceCount; i++)
+        //{
+        //    posDirs[i].position = Vector4.one;
+        //    posDirs[i].picIndex = i % TexArr.depth;
+        //}
 
         colorBuffer.SetData(colors);
         positionBuffer.SetData(posDirs);

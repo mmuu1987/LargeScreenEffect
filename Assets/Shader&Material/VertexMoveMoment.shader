@@ -4,7 +4,7 @@
     _MainTex ("Albedo (RGB)", 2D) = "white" {}
     _Glossiness ("Smoothness", Range(0,1)) = 0.5
     _Metallic ("Metallic", Range(0,1)) = 0.0
-    _Range("Range",Range(-2,2))=0
+    _Range("Range",Range(-180,180))=0
     _Frame("Frame",Range(0,100))=0
     _Angle("Angle",float) =0
     _Color("Color",color) = (1,1,1,1)
@@ -13,7 +13,7 @@
     Tags { "RenderType"="Opaque" }
     LOD 200
 
-    
+   
     // ------------------------------------------------------------
     // Surface shader code generated out of a CGPROGRAM block:
     
@@ -43,6 +43,8 @@
       #include "UnityPBSLighting.cginc"
       #include "AutoLight.cginc"
 
+      #include "Assets/Common/Shaders/Math.cginc"
+      #include "Assets/ComputeShader/GPUParticle.cginc"
       #define INTERNAL_DATA
       #define WorldReflectionVector(data,normal) data.worldRefl
       #define WorldNormalVector(data,normal) normal
@@ -59,21 +61,7 @@
       struct Input {
         float2 uv_MainTex;
       };
-      struct PosAndDir   {
-        float4 position;
-        float4 velocity;
-        float3 initialVelocity;
-        float4 originalPos;
-        float3 moveTarget;
-        float3 moveDir;
-        float2 indexRC;
-        int picIndex;
-        int bigIndex;
-        float4 uvOffset; 
-        float4 uv2Offset; 
-        int stateCode;
-
-      };
+      
 
 
       #if SHADER_TARGET >= 45
@@ -99,7 +87,7 @@
         o.Alpha = c.a;
       }
       
-
+      
       
       // half-precision fragment shader registers:
       #ifdef UNITY_HALF_PRECISION_FRAGMENT_SHADER_REGISTERS
@@ -146,13 +134,27 @@
       // vertex shader
       v2f_surf vert_surf (appdata_full v,uint instanceID : SV_InstanceID, uint id:SV_VERTEXID) {
 
-        if(id==1)v.vertex.x+=_Range;
+        //if(id==1)v.vertex.x+=_Range;
 
         float4 pos;
         float3 worldPos;
         #if SHADER_TARGET >= 45
           float4 data = positionBuffer[instanceID].position;
-          worldPos = data.xyz + v.vertex.xyz *data.w;
+          float4 uv2Offset = positionBuffer[instanceID].uv2Offset;
+          float4 uvOffset = positionBuffer[instanceID].uvOffset;
+          // unity_ObjectToWorld._11_21_31_41 = float4(data.w, 0, 0, 0);
+          // unity_ObjectToWorld._12_22_32_42 = float4(0, data.w, 0, 0);
+          // unity_ObjectToWorld._13_23_33_43 = float4(0, 0, data.w, 0);
+          // unity_ObjectToWorld._14_24_34_44 = float4(data.xyz, 1);
+          // unity_WorldToObject = unity_ObjectToWorld;
+          // unity_WorldToObject._14_24_34 *= -1;
+          // unity_WorldToObject._11_22_33 = 1.0f / unity_WorldToObject._11_22_33;
+
+          float angle = _SinTime.y * uv2Offset.y * uv2Offset.z* uv2Offset.w;//尽量让旋转多一点随机，这里用到的参数都很多随机
+          float4 rot = rotate_angle_axis(angle,float3(0,1,0));
+          float3 newVector = rotate_vector_at(v.vertex,float3(0,0,0),rot);
+          worldPos = data.xyz + newVector *data.w;
+          v.normal = rotate_vector_at( v.normal,float3(0,0,0),rot);
           pos= mul(UNITY_MATRIX_VP, float4(worldPos, 1.0f));
         #endif
         
@@ -311,7 +313,8 @@
       #define WorldReflectionVector(data,normal) data.worldRefl
       #define WorldNormalVector(data,normal) normal
 
-      
+      #include "Assets/Common/Shaders/Math.cginc"
+      #include "Assets/ComputeShader/GPUParticle.cginc"
       
 
       sampler2D _MainTex;
@@ -324,36 +327,9 @@
       struct Input {
         float2 uv_MainTex;
       };
-      struct PosAndDir   {
-        float4 position;
-        float4 velocity;
-        float3 initialVelocity;
-        float4 originalPos;
-        float3 moveTarget;
-        float3 moveDir;
-        float2 indexRC;
-        int picIndex;
-        int bigIndex;
-        float4 uvOffset; 
-        float4 uv2Offset; 
-        int stateCode;
-
-      };
-
-
       #if SHADER_TARGET >= 45
         StructuredBuffer<PosAndDir> positionBuffer;
       #endif
-
-      void rotate2D(inout float2 v, float r)
-      {
-        float s, c;
-        sincos(r, s, c);
-        v = float2(v.x * c - v.y * s, v.x * s + v.y * c);
-      }
-
-      
-
       half _Glossiness;
       half _Metallic;
 
@@ -378,16 +354,9 @@
       v2f_surf vert_surf (appdata_full v,uint instanceID : SV_InstanceID, uint id:SV_VERTEXID) {
 
         if(id==1)v.vertex.x+=_Range;
-
-        
-        
         float3 worldPos;
         #if SHADER_TARGET >= 45
           float4 data = positionBuffer[instanceID].position;
-
-          // float rotation = data.w * data.w * _Time.y * 0.5f;
-          // rotate2D(data.xz, rotation);
-
           //其他宏用到改变的矩阵
           unity_ObjectToWorld._11_21_31_41 = float4(data.w, 0, 0, 0);
           unity_ObjectToWorld._12_22_32_42 = float4(0, data.w, 0, 0);
@@ -397,9 +366,10 @@
           unity_WorldToObject._14_24_34 *= -1;
           unity_WorldToObject._11_22_33 = 1.0f / unity_WorldToObject._11_22_33;
 
-          
-          
-          worldPos = data.xyz + v.vertex.xyz *data.w;
+          float4 rot = rotate_angle_axis(_Range/RadianRatio,float3(0,1,0));
+          float3 newVector = rotate_vector_at(v.vertex,float3(0,0,0),rot);
+          worldPos = data.xyz + newVector *data.w;
+          v.normal = rotate_vector_at( v.normal,float3(0,0,0),rot);
           
         #endif
 
