@@ -223,6 +223,7 @@ public class PositionConvert : MonoBehaviour
        else
        {
 
+
            //检测位置，如果位置改变太快，则舍弃新的位置
 
            Vector4[] array = tempList.ToArray();
@@ -234,9 +235,12 @@ public class PositionConvert : MonoBehaviour
 
                Vector3 d = v1 - v2;
 
-               if (d.sqrMagnitude <= SqrMagnitudeValue)
+
+
+               if (d.magnitude <= SqrMagnitudeValue && v2.magnitude>=1)
                    _cache[i] = array[i];
-           }
+               
+            }
         }
         return _cache;
 

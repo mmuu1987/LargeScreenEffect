@@ -17,6 +17,8 @@ public class InteractionFSM : UIStateFSM
         TextureInstanced.Instance.Type = MotionType.VertexMovement;
         Common.ChangeCategory(0);
         base.Enter();
+
+        Target.ShowTip(false,true,15f);
         
     }
 

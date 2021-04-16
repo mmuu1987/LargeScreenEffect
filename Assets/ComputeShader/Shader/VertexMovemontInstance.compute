@@ -173,18 +173,11 @@ void MoveFront(uint3 id : SV_DispatchThreadID)
     
     if(MoveRange.z<=pos.z)
     {
-      //超过限定范围就归位
-        float2 v = GetVelocity(pos.xyz);
-        v = v / 2 + 0.5; //将范围约束在0,1
-        //new Vector4(rangeVector2.x - RanomPos.x / 2, rangeVector2.y - RanomPos.y / 2 + heightTest, Zdepth + Random.Range(0, RanomPos.z), 3f);
-        float newx = v.x * MoveRange.x;
-        float newy = v.y * MoveRange.y;
+      
+        originalPos.z = 0;
+        pos = originalPos;
         
-        float4 temp = float4(newx - MoveRange.x / 2, newy - MoveRange.y/2, 0, pos.w);
-        
-        pos = temp;
-        originalPos = temp;
-        moveTarget = temp.xyz;
+        moveTarget = originalPos.xyz;
         uv2Offset.x = 1;
 
     }

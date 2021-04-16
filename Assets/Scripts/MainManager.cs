@@ -25,6 +25,8 @@ public class MainManager : MonoBehaviour
 
     public float StandbyTime = 7f;
 
+    public GameObject TipGameObject;
+
     // Start is called before the first frame update
     IEnumerator Start()
     {
@@ -133,6 +135,43 @@ public class MainManager : MonoBehaviour
                 }
             }
         }
+    }
+
+    private Coroutine _waitCoroutine;
+
+    /// <summary>
+    /// 是否显示提示
+    /// </summary>
+    /// <param name="isShow"></param>
+    /// <param name="isWait">是否等待足够的时间来隐藏</param>
+    /// <param name="time">等待的时间</param>
+    public void ShowTip(bool isShow,bool isWait,float time=0)
+    {
+        TipGameObject.gameObject.SetActive(true);
+        if (isShow)
+        {
+            if(isWait)
+                _waitCoroutine = StartCoroutine(Common.WaitTime(time, (() =>
+                {
+                    TipGameObject.SetActive(true);
+                })));
+            else 
+             TipGameObject.SetActive(true);
+        }
+        else
+        {
+            if (isWait)
+            {
+                if(_waitCoroutine!=null)StopCoroutine(_waitCoroutine);
+                _waitCoroutine = StartCoroutine(Common.WaitTime(time, (() =>
+                {
+                    TipGameObject.SetActive(false);
+                })));
+            }
+            else
+                TipGameObject.SetActive(false);
+        }
+        
     }
     // Update is called once per frame
     void Update()

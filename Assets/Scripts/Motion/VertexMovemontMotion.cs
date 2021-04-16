@@ -132,7 +132,7 @@ public class VertexMovemontMotion : MotionInputMoveBase
             {
                 GUICursor.enabled = false;
                 Common.ChangeStateCode(1);
-               // logoLable.DOKill();
+                logoLable.DOKill();
                 logoLable.gameObject.SetActive(true);
                 LogoMaterial.DOColor(new Color(col.r, col.g, col.b, 1f), 3f).SetEase(Ease.InOutCubic);
 
@@ -143,9 +143,9 @@ public class VertexMovemontMotion : MotionInputMoveBase
                 GUICursor.enabled = true;
                 Common.ChangeStateCode(2);
                 if (_coroutine != null) StopCoroutine(_coroutine);
-                //logoLable.DOKill();
+                logoLable.DOKill();
                 _coroutine = StartCoroutine(WaitChangeCategory(500));
-                LogoMaterial.DOColor(new Color(col.r, col.g, col.b, 0f), 3f).SetEase(Ease.InOutCubic);
+                LogoMaterial.color = new Color(col.r,col.g,col.b,0);
 
             }
 
@@ -242,6 +242,7 @@ public class VertexMovemontMotion : MotionInputMoveBase
             //存储两根骨骼数据的数组索引
             List<int> indexs = Common.BonePos[Random.Range(0, Common.BonePos.Count)];
             _posDirs[i].indexRC = new Vector2(indexs[0], indexs[1]);
+
             _posDirs[i].velocity = new Vector3(Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f), 0f);
 
             //第一个参数是时间间隔，第二个参数在computeshader那边保存时间缓存,第三个参数为速度,第四个参数为第二状态的时间间隔，第三状态的随机值

@@ -23,6 +23,7 @@ public class PlayVideoStateFSM : UIStateFSM
         string url = "file:///"+Application.streamingAssetsPath + "/" + _videoPath;
         _videoPlayer.url = url;
         _videoPlayer.Play();
+        Target.ShowTip(false,true,15f);
         base.Enter();
 
     }
