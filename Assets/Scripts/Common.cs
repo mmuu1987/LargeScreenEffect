@@ -62,9 +62,9 @@ public static class Common
     public static void Init()
     {
         Debug.Log("init");
-        CategoryDic.Add(0, new List<int> { 0 });
-        CategoryDic.Add(1, new List<int> { 2, 1 });
-        CategoryDic.Add(2, new List<int> { 3 });
+        CategoryDic.Add(0, new List<int> { 0,1,2 });
+       // CategoryDic.Add(1, new List<int> { 3, 1 });
+        CategoryDic.Add(1, new List<int> { 3 });
 
         BonePos.Add(0, new List<int>() { 2, 3 });
         BonePos.Add(1,new List<int>(){0,1});
@@ -121,15 +121,21 @@ public static class Common
             Category = 0;//归为初始状态
            
         }
-       
-        StateCode = CategoryDic[Category][0];//改变一个种类就要设置这个种类的初始状态码
+
+        ChangeStateCode(CategoryDic[Category][0]);//改变一个种类就要设置这个种类的初始状态码
+    }
+
+    public static void ChangeStateCode(int code)
+    {
+       // Debug.LogError("改变了状态码");
+        StateCode = code;
     }
 
     /// <summary>
     /// 改变运动的种类
     /// </summary>
     /// <param name="category"></param>
-    public static void SetCategory(int category)
+    public static void ChangeCategory(int category)
     {
         if (CategoryDic.ContainsKey(category))
         {

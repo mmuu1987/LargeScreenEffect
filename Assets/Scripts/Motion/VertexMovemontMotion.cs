@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
+using DG.Tweening;
 using UnityEngine;
+using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 
@@ -38,9 +40,10 @@ public class VertexMovemontMotion : MotionInputMoveBase
     /// </summary>
     public float ForceRadius = 2f;
 
-    public RectTransform GUICursor;
+    public Image GUICursor;
 
-    
+    public Transform logoLable;
+    public Material LogoMaterial;
     protected override void Init()
     {
         //float temp = 3;
@@ -102,11 +105,51 @@ public class VertexMovemontMotion : MotionInputMoveBase
         ComputeShader.SetInt("StateCode", 0);
 
         ComputeShader.SetFloat("dt", Time.deltaTime);
-        ComputeShader.SetFloat("MoveSpeed", 2f);
+      
         ComputeShader.SetVector("MoveRange", RanomPos);
 
         PositionConvert.Instance.HandEvent += HandEvent;
+        InteractionInputModule.Instance.HandDetectionEvent += HandDetectionEvent;
 
+
+       // logoLable.gameObject.SetActive(false);
+    }
+
+    private void HandDetectionEvent(bool isRight, bool isGrip)
+    {
+        if (Common.Category != 0)
+        {
+            GUICursor.enabled = true;
+            return;//如果不是第1种运动种类则不执行
+
+        }
+
+        
+        if (isRight)
+        {
+            Color col = LogoMaterial.color;
+            if (isGrip)
+            {
+                GUICursor.enabled = false;
+                Common.ChangeStateCode(1);
+               // logoLable.DOKill();
+                logoLable.gameObject.SetActive(true);
+                LogoMaterial.DOColor(new Color(col.r, col.g, col.b, 1f), 3f).SetEase(Ease.InOutCubic);
+
+
+            }
+            else
+            {
+                GUICursor.enabled = true;
+                Common.ChangeStateCode(2);
+                if (_coroutine != null) StopCoroutine(_coroutine);
+                //logoLable.DOKill();
+                _coroutine = StartCoroutine(WaitChangeCategory(500));
+                LogoMaterial.DOColor(new Color(col.r, col.g, col.b, 0f), 3f).SetEase(Ease.InOutCubic);
+
+            }
+
+        }
        
     }
 
@@ -118,18 +161,22 @@ public class VertexMovemontMotion : MotionInputMoveBase
 
     private void HandEvent(bool obj)
     {
+
+        if (Common.Category != 1) return;//如果不是第二种运动种类则不执行
         if (obj)
         {
             
-            Common.StateCode = 2;
+           
+            Common.ChangeStateCode(2);
             if (_coroutine != null) StopCoroutine(_coroutine);
             _coroutine = StartCoroutine(WaitChangeCategory(500));
 
         }
         else
         {
-            Common.StateCode = 1;
            
+            Common.ChangeStateCode(1);
+
         }
     }
     /// <summary>
@@ -148,7 +195,7 @@ public class VertexMovemontMotion : MotionInputMoveBase
             tempCount++;
             if (tempCount >= count)
             {
-                Common.SetCategory(0);
+                Common.ChangeCategory(0);
                 yield break;
             }
         }
@@ -160,11 +207,10 @@ public class VertexMovemontMotion : MotionInputMoveBase
         float temp = 0f;
        
 
-        int index = 0;
-        float beginPosX = Camera.main.ScreenToWorldPoint(new Vector3(0, 0, Zdepth)).x;
+        
         //粒子位置的取值范围
 
-        List<Vector2> randomPos2 = Common.Sample2D(RanomPos.x, RanomPos.y, 1, 30);
+        List<Vector2> randomPos2 = Common.Sample2D(RanomPos.x, RanomPos.y, 1f, 30);
         float heightTest = 0f;
 
        
@@ -186,6 +232,8 @@ public class VertexMovemontMotion : MotionInputMoveBase
             _posDirs[i].originalPos = value;
             _posDirs[i].stateCode = 0;//状态码
             
+            //第一状态的前向移动速度要用到 第一个参数是移动速度
+            _posDirs[i].initialVelocity = new Vector4(Random.Range(1f,5f),0f,0f,0f);
            
             //第一个参数为第一状态的布尔值，用来存储布尔逻辑,第二个为顶点旋转的概率，只有旋转，跟不旋转，同样是布尔值，第三个是旋转的速度,第四个参数同样为布尔值，用在指示是否旋转
             //在computeshader里赋值
@@ -197,7 +245,7 @@ public class VertexMovemontMotion : MotionInputMoveBase
             _posDirs[i].velocity = new Vector3(Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f), 0f);
 
             //第一个参数是时间间隔，第二个参数在computeshader那边保存时间缓存,第三个参数为速度,第四个参数为第二状态的时间间隔，第三状态的随机值
-            _posDirs[i].uvOffset = new Vector4(Random.Range(3f, 10f), 0f, Random.Range(0.05f, 0.1f), Random.Range(0f, 1f));
+            _posDirs[i].uvOffset = new Vector4(Random.Range(1f, 3f), 0f, Random.Range(0.05f, 0.1f), Random.Range(0f, 1f));
 
 
         }
@@ -280,19 +328,25 @@ public class VertexMovemontMotion : MotionInputMoveBase
         ComputeShader.SetFloat("ForceRadius", ForceRadius);
         ComputeShader.SetFloat("Seed", Random.Range(0f, 1f));
         ComputeShader.SetFloat("dt", Time.deltaTime);
-        ComputeShader.SetVectorArray("bonePos", PositionConvert.Instance.GetPosArray());
+        if(Common.Category==1)
+         ComputeShader.SetVectorArray("bonePos", PositionConvert.Instance.GetPosArray());
 
-        Vector3 screenPos =  Camera.main.WorldToScreenPoint(GetWorldPos());
 
        
-        if (Common.StateCode == 1 || Common.StateCode == 2)//聚集和散开状态需要的是世界空间位置
+        if(Common.Category==0)//自由向前运动是需要的是屏幕的位置
         {
-           ComputeShader.SetVector("TargetPosRight", new Vector4(0f,0f,30.5f,0f));//new Vector4(0f,0f,30.5f,0f)固定集中在中间
+           // Debug.LogError("输入坐标");
+
+            Vector2 screenPos = GUICursor.rectTransform.anchoredPosition;
+            ComputeShader.SetVector("TargetPosRight", screenPos);
+            Vector3 screenToWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 30.5f));
+            //Vector3 screenToWorldPos = new Vector4(0f, 0f, 30.5f, 0f);
+            ComputeShader.SetVector("TargetWorldPos", screenToWorldPos);//new Vector4(0f,0f,30.5f,0f)固定集中在中间
+            logoLable.position = screenToWorldPos + new Vector3(0f, -10f, 0f);
+
            
-        }
-        else if(Common.StateCode==0)//自由向前运动是需要的是屏幕的位置
-        {
-           ComputeShader.SetVector("TargetPosRight", GUICursor.anchoredPosition);
+
+
         }
        
         base.Dispatch(dispatchID, system);
@@ -315,20 +369,19 @@ public class VertexMovemontMotion : MotionInputMoveBase
     {
         base.ExitMotion();
         PositionConvert.Instance.HandEvent -= HandEvent;
+        InteractionInputModule.Instance.HandDetectionEvent -= HandDetectionEvent;
     }
 
 #if UNITY_EDITOR
     private void OnGUI()
     {
-        if (GUI.Button(new Rect(0f, 0f, 100f, 100f), "gatherState"))
+        if (GUI.Button(new Rect(300f, 0f, 100f, 100f), "gatherState"))
         {
-            Common.Category = 1;
-            Common.StateCode = 1;
+            HandDetectionEvent(true, true);
         }
-        if (GUI.Button(new Rect(100f, 0f, 100f, 100f), "diffuseState"))
+        if (GUI.Button(new Rect(400f, 0f, 100f, 100f), "diffuseState"))
         {
-            Common.Category = 1;
-            Common.StateCode = 2;
+            HandDetectionEvent(true, false);
         }
     }
 #endif

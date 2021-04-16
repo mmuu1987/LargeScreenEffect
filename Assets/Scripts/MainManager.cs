@@ -44,6 +44,8 @@ public class MainManager : MonoBehaviour
         _curState = UIState.PlayVideoState;
 
         StartStandby();
+
+        Screen.SetResolution(1664,1536,true);
     }
 
     private void RemoveUserEvent(long obj)
@@ -125,25 +127,29 @@ public class MainManager : MonoBehaviour
                 {
                     KinectManager.Instance.ClearKinectUsers();
                 }
+                if (Mathf.Abs(pos.z) > z)
+                {
+                    KinectManager.Instance.ClearKinectUsers();
+                }
             }
         }
     }
     // Update is called once per frame
     void Update()
     {
-        this.CheckUserRange(0.65f, 0.45f, 3f);
+        this.CheckUserRange(0.65f, 0.45f, 5f);
     }
 #if UNITY_EDITOR
     private void OnGUI()
     {
-        //    if (GUI.Button(new Rect(0f, 0f, 100f, 100f), "video"))
-        //    {
-        //        _Machine.ChangeState(DicUI[UIState.PlayVideoState]);
-        //    }
-        //    if (GUI.Button(new Rect(100f, 0f, 100f, 100f), "StandBy"))
-        //    {
-        //        _Machine.ChangeState(DicUI[UIState.StandBy]);
-        //    }
+        if (GUI.Button(new Rect(0f, 0f, 100f, 100f), "video"))
+        {
+            _Machine.ChangeState(DicUI[UIState.PlayVideoState]);
+        }
+        if (GUI.Button(new Rect(100f, 0f, 100f, 100f), "StandBy"))
+        {
+            _Machine.ChangeState(DicUI[UIState.InteractionState]);
+        }
     }
 #endif
 

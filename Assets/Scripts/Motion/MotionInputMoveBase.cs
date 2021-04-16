@@ -22,7 +22,7 @@ public class MotionInputMoveBase : MotionBase, IDragHandler, IEndDragHandler, IP
         base.Init();
       
 
-        Camera.main.fieldOfView = 60f;
+       // Camera.main.fieldOfView = 60f;
 
     }
 

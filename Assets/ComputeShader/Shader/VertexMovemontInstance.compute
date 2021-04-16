@@ -17,10 +17,11 @@
 //着力半径
 float ForceRadius;
 
-float MoveSpeed = 1;
+
 float dt;
 float4 MoveRange;
 float3 TargetPosRight;
+float3 TargetWorldPos;
 
 int ScreenWidth;
 int ScreenHeight;
@@ -97,9 +98,11 @@ void MoveFront(uint3 id : SV_DispatchThreadID)
     
     int stateCode = positionBuffer[id.x].stateCode;
     
+    float3 initialVelocity = positionBuffer[id.x].initialVelocity;
     
+     
     
-    float3 target = originalPos.xyz + float3(0, 0, MoveSpeed);
+    float3 target = originalPos.xyz + float3(0, 0, initialVelocity.x);
     
     originalPos.xyz = lerp(originalPos.xyz, target, dt);
    
@@ -182,6 +185,7 @@ void MoveFront(uint3 id : SV_DispatchThreadID)
         pos = temp;
         originalPos = temp;
         moveTarget = temp.xyz;
+        uv2Offset.x = 1;
 
     }
     
@@ -247,7 +251,7 @@ void gatherState(uint3 id : SV_DispatchThreadID)
 	
 	
 	
-    pos.xyz = CubicEaseOut(pos.xyz, TargetPosRight.xyz, dt * v * 10);
+    pos = CubicEaseOut(pos, float4(TargetWorldPos, 12), dt * v * 10);
 	
     positionBuffer[id.x].position = pos;
     positionBuffer[id.x].moveDir = moveDir;
@@ -304,7 +308,7 @@ void diffuseState(uint3 id : SV_DispatchThreadID)
     }
 	/////////间隔到一定时间才移动
 	
-    pos.xyz = CubicEaseIn(pos.xyz, originalPos.xyz, dt * v * 20);
+    pos = CubicEaseIn(pos, originalPos, dt * v * 20);
 	
     positionBuffer[id.x].position = pos;
     positionBuffer[id.x].moveDir = moveDir;
@@ -379,7 +383,7 @@ void ChangeSkeleton(uint3 id : SV_DispatchThreadID)
 	
     p3 = p3 + velocity.xyz;
 	
-    pos.xyz = lerp(pos.xyz, p3, dt * _speed * (0.1 + timeTemp.w)); //0.1+timeTemp.w为随机速度，加上0.1不至于速度太慢
+    pos = lerp(pos, float4(p3, originalPos.w), dt * _speed * (0.1 + timeTemp.w)); //0.1+timeTemp.w为随机速度，加上0.1不至于速度太慢
 	
     positionBuffer[id.x].position = pos;
     positionBuffer[id.x].moveDir = moveDir;

@@ -15,6 +15,7 @@ public class InteractionFSM : UIStateFSM
     public override void Enter()
     {
         TextureInstanced.Instance.Type = MotionType.VertexMovement;
+        Common.ChangeCategory(0);
         base.Enter();
         
     }

@@ -36,7 +36,7 @@ public class PositionConvert : MonoBehaviour
     public event Action<bool> HandEvent;
 
     private bool _isOpenHand = true;
-
+    private Vector4[] _cache;
     /// <summary>
     /// 半径
     /// </summary>
@@ -44,6 +44,8 @@ public class PositionConvert : MonoBehaviour
     private WaitForEndOfFrame wfef;
     public Vector3 SpineMidpos;
     private Coroutine _coroutine;
+
+    public float SqrMagnitudeValue = 100;
     private void Awake()
     {
         if(Instance!=null)throw new UnityException("已经有了一个单例了");
@@ -70,9 +72,10 @@ public class PositionConvert : MonoBehaviour
                     ScreenPosDictionary.Add(key,Vector3.zero);
                    
                 }
-            
 
-           
+                
+
+
 
         }
 
@@ -200,16 +203,42 @@ public class PositionConvert : MonoBehaviour
         return Vector3.zero;
     }
 
+   
     public Vector4[] GetPosArray()
     {
-       List<Vector4> tempList = new List<Vector4>();
+        
+
+        List<Vector4> tempList = new List<Vector4>();
        foreach (Vector3 vector3 in ScreenPosDictionary.Values)
        {
            Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(vector3.x, vector3.y, 30.5f));
             tempList.Add(new Vector4(worldPos.x, worldPos.y, worldPos.z,1));
        }
 
-       return tempList.ToArray();
+
+       if (_cache == null)
+       {
+           _cache = tempList.ToArray();
+       }
+       else
+       {
+
+           //检测位置，如果位置改变太快，则舍弃新的位置
+
+           Vector4[] array = tempList.ToArray();
+
+           for (int i = 0; i < _cache.Length; i++)
+           {
+               Vector3 v1 = _cache[i];
+               Vector3 v2 = array[i];
+
+               Vector3 d = v1 - v2;
+
+               if (d.sqrMagnitude <= SqrMagnitudeValue)
+                   _cache[i] = array[i];
+           }
+        }
+        return _cache;
 
     }
 }

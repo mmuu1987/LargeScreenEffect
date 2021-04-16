@@ -54,7 +54,12 @@ public class InteractionInputModule : PointerInputModule, InteractionListenerInt
     [FormerlySerializedAs("m_AllowActivationOnMobileDevice")]
     private bool m_ForceModuleActive;
 
-
+    /// <summary>
+    /// 在光标没有经过UI物体的时候触发事件
+    /// 手 张开 握住 两个事件,第一个参数为是否是左右手，左手为false,右手为true，第二个参数握拳为true，松开为false
+    /// 先有握住后有张开，成对出现，不可能一直出现松开
+    /// </summary>
+    public event Action<bool,bool> HandDetectionEvent;
     public bool forceModuleActive
     {
         get { return m_ForceModuleActive; }
@@ -330,7 +335,10 @@ public class InteractionInputModule : PointerInputModule, InteractionListenerInt
         var currentOverGo = pointerEvent.pointerCurrentRaycast.gameObject;
         //Debug.Log("HandGripDetected overGo is " + currentOverGo);
 
-
+        if (currentOverGo == null)
+        {
+            if (HandDetectionEvent != null) HandDetectionEvent(isRightHand, true);
+        }
         m_framePressState = PointerEventData.FramePressState.Pressed;
         //m_isLeftHand = !isRightHand;
         m_handCursorPos = handScreenPos;
@@ -351,6 +359,10 @@ public class InteractionInputModule : PointerInputModule, InteractionListenerInt
         var pointerEvent = leftButtonData.buttonData;
         var currentOverGo = pointerEvent.pointerCurrentRaycast.gameObject;
         // Debug.Log("HandReleaseDetected overGo is " + currentOverGo);
+        if (currentOverGo == null)
+        {
+            if (HandDetectionEvent != null) HandDetectionEvent(isRightHand, false);
+        }
 
 
         m_framePressState = PointerEventData.FramePressState.Released;

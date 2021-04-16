@@ -245,6 +245,8 @@ float3 EaseOutQuad(float3 start, float3 end, float value)
 }
 
 
+
+
 float3 CubicEaseIn( float3 start, float3 end, float value)
 {
     
@@ -252,7 +254,25 @@ float3 CubicEaseIn( float3 start, float3 end, float value)
     return end * value * value * value + start;
 }
 
+float4 CubicEaseIn(float4 start, float4 end, float value)
+{
+    
+    end -= start;
+    return end * value * value * value + start;
+}
+
+
+
+
+
 float3 CubicEaseOut(float3 start, float3 end, float value)
+{
+    end -= start;
+    value = value - 1;
+    return end * (value * value * value + 1) + start;
+}
+
+float4 CubicEaseOut(float4 start, float4 end, float value)
 {
     end -= start;
     value = value - 1;
