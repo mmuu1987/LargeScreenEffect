@@ -353,10 +353,12 @@
       // vertex shader
       v2f_surf vert_surf (appdata_full v,uint instanceID : SV_InstanceID, uint id:SV_VERTEXID) {
 
-        if(id==1)v.vertex.x+=_Range;
+        //if(id==1)v.vertex.x+=_Range;
         float3 worldPos;
         #if SHADER_TARGET >= 45
           float4 data = positionBuffer[instanceID].position;
+          float4 uv2Offset = positionBuffer[instanceID].uv2Offset;
+          float4 uvOffset = positionBuffer[instanceID].uvOffset;
           //其他宏用到改变的矩阵
           unity_ObjectToWorld._11_21_31_41 = float4(data.w, 0, 0, 0);
           unity_ObjectToWorld._12_22_32_42 = float4(0, data.w, 0, 0);
@@ -366,11 +368,14 @@
           unity_WorldToObject._14_24_34 *= -1;
           unity_WorldToObject._11_22_33 = 1.0f / unity_WorldToObject._11_22_33;
 
-          float4 rot = rotate_angle_axis(_Range/RadianRatio,float3(0,1,0));
+
+          float angle = _SinTime.y * uv2Offset.y * uv2Offset.z* uv2Offset.w;//尽量让旋转多一点随机，这里用到的参数都很多随机
+          float4 rot = rotate_angle_axis(angle,float3(0,1,0));
+
           float3 newVector = rotate_vector_at(v.vertex,float3(0,0,0),rot);
           worldPos = data.xyz + newVector *data.w;
           v.normal = rotate_vector_at( v.normal,float3(0,0,0),rot);
-          
+          v.vertex.xyz = newVector;
         #endif
 
         UNITY_SETUP_INSTANCE_ID(v);
